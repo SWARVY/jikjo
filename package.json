@@ -2,7 +2,7 @@
   "name": "jikjo",
   "version": "0.0.1",
   "description": "fluent editor based on lexical",
-  "main": "index.js",
+  "main": "src/index.ts",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
@@ -11,5 +11,18 @@
   ],
   "author": "SWARVY",
   "license": "MIT",
-  "packageManager": "pnpm@10.12.1"
+  "packageManager": "pnpm@10.12.1",
+  "dependencies": {
+    "@lexical/react": "^0.38.2",
+    "lexical": "^0.38.2"
+  },
+  "peerDependencies": {
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "devDependencies": {
+    "@types/react": "^19.2.5",
+    "@types/react-dom": "^19.2.3",
+    "tsdown": "^0.16.5"
+  }
 }
