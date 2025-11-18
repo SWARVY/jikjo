@@ -1,6 +1,6 @@
 {
-  "name": "@repo/jikjo-react",
-  "version": "1.0.0",
+  "name": "@jikjo/react",
+  "version": "0.0.1",
   "description": "",
   "main": "index.js",
   "scripts": {

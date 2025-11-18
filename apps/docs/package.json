@@ -1,5 +1,5 @@
 {
-  "name": "docs",
+  "name": "@jikjo/docs",
   "version": "0.1.0",
   "type": "module",
   "private": true,
@@ -11,14 +11,15 @@
     "check-types": "next typegen && tsc --noEmit"
   },
   "dependencies": {
-    "@repo/ui": "workspace:*",
+    "@jikjo/ui": "workspace:*",
+    "@jikjo/react": "workspace:*",
     "next": "^16.0.1",
     "react": "^19.2.0",
     "react-dom": "^19.2.0"
   },
   "devDependencies": {
-    "@repo/eslint-config": "workspace:*",
-    "@repo/typescript-config": "workspace:*",
+    "@jikjo/eslint-config": "workspace:*",
+    "@jikjo/typescript-config": "workspace:*",
     "@types/node": "^22.15.3",
     "@types/react": "19.2.2",
     "@types/react-dom": "19.2.2",
