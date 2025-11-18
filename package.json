@@ -1,28 +1,20 @@
 {
   "name": "jikjo",
-  "version": "0.0.1",
-  "description": "fluent editor based on lexical",
-  "main": "src/index.ts",
+  "private": true,
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "keywords": [
-    "editor"
-  ],
-  "author": "SWARVY",
-  "license": "MIT",
-  "packageManager": "pnpm@10.12.1",
-  "dependencies": {
-    "@lexical/react": "^0.38.2",
-    "lexical": "^0.38.2"
-  },
-  "peerDependencies": {
-    "react": "^19.0.0",
-    "react-dom": "^19.0.0"
+    "build": "turbo run build",
+    "dev": "turbo run dev",
+    "lint": "turbo run lint",
+    "format": "prettier --write \"**/*.{ts,tsx,md}\"",
+    "check-types": "turbo run check-types"
   },
   "devDependencies": {
-    "@types/react": "^19.2.5",
-    "@types/react-dom": "^19.2.3",
-    "tsdown": "^0.16.5"
+    "prettier": "^3.6.2",
+    "turbo": "^2.6.1",
+    "typescript": "5.9.2"
+  },
+  "packageManager": "pnpm@9.0.0",
+  "engines": {
+    "node": ">=18"
   }
 }
