@@ -1,0 +1,29 @@
+{
+  "name": "@repo/jikjo-react",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "react",
+    "jikjo",
+    "lexical",
+    "ui"
+  ],
+  "author": "SWARVY",
+  "license": "MIT",
+  "devDependencies": {
+    "rolldown": "1.0.0-beta.50",
+    "typescript": "^5.9.3"
+  },
+  "peerDependencies": {
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "dependencies": {
+    "@lexical/react": "^0.38.2",
+    "lexical": "^0.38.2"
+  }
+}
