@@ -12,7 +12,7 @@
   },
   "dependencies": {
     "@jikjo/ui": "workspace:*",
-    "@jikjo/react": "workspace:*",
+    "@jikjo/core": "workspace:*",
     "next": "^16.0.1",
     "react": "^19.2.0",
     "react-dom": "^19.2.0"

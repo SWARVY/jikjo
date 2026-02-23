@@ -1,0 +1,35 @@
+{
+  "name": "@jikjo/playground",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "check-types": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@base-ui/react": "^1.2.0",
+    "@jikjo/core": "workspace:*",
+    "@jikjo/ui-kit": "workspace:*",
+    "@lexical/react": "^0.38.2",
+    "@tanstack/react-router": "^1.120.16",
+    "lexical": "^0.38.2",
+    "lucide-react": "^0.575.0",
+    "motion": "^11.18.2",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0"
+  },
+  "devDependencies": {
+    "@jikjo/typescript-config": "workspace:*",
+    "@tailwindcss/vite": "^4.2.0",
+    "@tanstack/router-plugin": "^1.120.16",
+    "@types/react": "^19.1.8",
+    "@types/react-dom": "^19.1.6",
+    "@vitejs/plugin-react": "^4.3.4",
+    "tailwindcss": "^4.2.0",
+    "typescript": "5.9.2",
+    "vite": "^6.3.5"
+  }
+}

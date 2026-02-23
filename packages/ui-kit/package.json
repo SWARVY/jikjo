@@ -1,0 +1,66 @@
+{
+  "name": "@jikjo/ui-kit",
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Styled editor UI components for jikjo",
+  "keywords": [
+    "editor",
+    "ui",
+    "jikjo",
+    "toolbar"
+  ],
+  "author": "SWARVY",
+  "license": "MIT",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
+      }
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsdown",
+    "dev": "tsdown --watch",
+    "check-types": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@jikjo/core": "workspace:*",
+    "lucide-react": "^0.575.0",
+    "tailwind-merge": "^3.5.0",
+    "tailwind-variants": "^3.2.2"
+  },
+  "peerDependencies": {
+    "@base-ui/react": "^1.0.0",
+    "@lexical/react": "^0.38.0",
+    "@lexical/rich-text": "^0.38.2",
+    "lexical": "^0.38.0",
+    "motion": "^11.0.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "devDependencies": {
+    "@base-ui/react": "^1.2.0",
+    "@jikjo/typescript-config": "workspace:*",
+    "@lexical/react": "^0.38.2",
+    "@lexical/rich-text": "^0.38.2",
+    "@types/react": "^19.1.8",
+    "@types/react-dom": "^19.1.6",
+    "lexical": "^0.38.2",
+    "motion": "^11.18.2",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
+    "tsdown": "^0.12.7",
+    "typescript": "5.9.2"
+  }
+}
