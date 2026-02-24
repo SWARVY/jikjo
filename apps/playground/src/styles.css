@@ -63,12 +63,25 @@ body {
   font-style: italic;
 }
 
-.jikjo-placeholder {
+/* ContentEditable + placeholder + InlineAddButton 의 공통 기준점 */
+.jikjo-editor-content {
+  position: relative;
+}
+
+/* Lexical이 placeholder를 <div aria-hidden> 안에 렌더하므로,
+   그 div를 ContentEditable 위에 정확히 오버레이 */
+.jikjo-editor-content > div[aria-hidden] {
   position: absolute;
-  top: 1.5rem;
-  left: 2rem;
+  top: 0;
+  left: 0;
+  right: 0;
   pointer-events: none;
+}
+
+.jikjo-placeholder {
+  padding: 1.5rem 2rem;
   color: #3f3f46;
   font-size: 1rem;
   user-select: none;
+  margin: 0;
 }

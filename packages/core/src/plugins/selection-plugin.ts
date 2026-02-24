@@ -50,9 +50,10 @@ function getSelectionRect(): SelectionRect | null {
 
   if (rect.width === 0) return null
 
+  // viewport 좌표로 저장 (page 좌표 변환 없음)
   return {
-    top: rect.top + window.scrollY,
-    left: rect.left + window.scrollX,
+    top: rect.top,
+    left: rect.left,
     width: rect.width,
     height: rect.height,
   }

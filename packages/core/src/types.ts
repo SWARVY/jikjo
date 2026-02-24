@@ -10,8 +10,8 @@ export interface SlashMenuItem {
   label: string
   /** Short description shown below the label */
   description: string
-  /** Icon character or emoji rendered in the item tile */
-  icon: string
+  /** Icon rendered in the item tile */
+  icon: ReactNode
   /** Called when the item is selected via click or keyboard Enter */
   onSelect: (editor: LexicalEditor) => void
 }

@@ -37,36 +37,36 @@ const slashMenuItems: SlashMenuItem[] = [
     id: 'paragraph',
     label: 'Paragraph',
     description: 'Plain text paragraph',
-    icon: '¶',
-    onSelect: replaceWithNode(() => $createParagraphNode()),
+    icon: null,
+    onSelect: replaceWithNode($createParagraphNode),
   },
   {
     id: 'heading1',
     label: 'Heading 1',
     description: 'Large section heading',
-    icon: 'H1',
+    icon: null,
     onSelect: replaceWithNode(() => $createHeadingNode('h1')),
   },
   {
     id: 'heading2',
     label: 'Heading 2',
     description: 'Medium section heading',
-    icon: 'H2',
+    icon: null,
     onSelect: replaceWithNode(() => $createHeadingNode('h2')),
   },
   {
     id: 'heading3',
     label: 'Heading 3',
     description: 'Small section heading',
-    icon: 'H3',
+    icon: null,
     onSelect: replaceWithNode(() => $createHeadingNode('h3')),
   },
   {
     id: 'quote',
     label: 'Quote',
     description: 'Capture a quote or callout',
-    icon: '"',
-    onSelect: replaceWithNode(() => $createQuoteNode()),
+    icon: null,
+    onSelect: replaceWithNode($createQuoteNode),
   },
 ]
 
@@ -77,15 +77,19 @@ export const richTextExtension: Extension = {
   nodes: [HeadingNode, QuoteNode],
   plugins: [
     createElement(RichTextPlugin, {
-      contentEditable: createElement(ContentEditable, {
-        className: 'jikjo-content-editable',
-        'aria-placeholder': 'Type something, or press / for commands…',
-        placeholder: createElement(
-          'p',
-          { className: 'jikjo-placeholder' },
-          'Type something, or press / for commands…',
-        ),
-      }),
+      contentEditable: createElement(
+        'div',
+        { className: 'jikjo-editor-content' },
+        createElement(ContentEditable, {
+          className: 'jikjo-content-editable',
+          'aria-placeholder': 'Type something, or press / for commands…',
+          placeholder: createElement(
+            'p',
+            { className: 'jikjo-placeholder' },
+            'Type something, or press / for commands…',
+          ),
+        }),
+      ),
       ErrorBoundary: LexicalErrorBoundary,
     }),
   ],

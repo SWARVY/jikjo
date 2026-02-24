@@ -1,49 +1,36 @@
 import {
   $getSelection,
   $isRangeSelection,
+  CLICK_COMMAND,
   COMMAND_PRIORITY_LOW,
   SELECTION_CHANGE_COMMAND,
 } from 'lexical'
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
-import { useEffect, useState } from 'react'
-import type { BlockRect } from './block-hover-plugin'
+import { useEffect, useRef, useState } from 'react'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 export interface InlineAddState {
   /** 커서가 비어있는 블록 위에 있는지 여부 */
   isActive: boolean
-  /** 비어있는 블록의 page 좌표 */
-  rect: BlockRect | null
   /** 해당 블록의 Lexical NodeKey */
   nodeKey: string | null
-}
-
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-
-function getBlockRect(el: Element): BlockRect {
-  const r = el.getBoundingClientRect()
-  return {
-    top: r.top + window.scrollY,
-    left: r.left + window.scrollX,
-    width: r.width,
-    height: r.height,
-  }
 }
 
 // ─── Hook ─────────────────────────────────────────────────────────────────────
 
 /**
- * 커서가 비어있는 블록(텍스트 없는 단락/헤딩 등)에 있을 때 해당 블록의
- * 위치와 NodeKey를 반환한다. 이를 이용해 인라인 `+` 버튼을 표시한다.
+ * 커서가 비어있는 블록(텍스트 없는 단락/헤딩 등)에 있을 때 해당 블록 DOM에
+ * `data-inline-add="active"` 속성을 직접 부여한다.
+ * JS 좌표 계산 없이 CSS/absolute 포지셔닝으로 버튼을 배치할 수 있게 한다.
  */
 export function useInlineAddPlugin(): InlineAddState {
   const [editor] = useLexicalComposerContext()
   const [state, setState] = useState<InlineAddState>({
     isActive: false,
-    rect: null,
     nodeKey: null,
   })
+  const prevDomElRef = useRef<HTMLElement | null>(null)
 
   useEffect(() => {
     function update() {
@@ -51,7 +38,7 @@ export function useInlineAddPlugin(): InlineAddState {
         const selection = $getSelection()
 
         if (!$isRangeSelection(selection) || !selection.isCollapsed()) {
-          setState({ isActive: false, rect: null, nodeKey: null })
+          clearActive()
           return
         }
 
@@ -60,14 +47,14 @@ export function useInlineAddPlugin(): InlineAddState {
         const topNode = anchorNode.getTopLevelElement()
 
         if (!topNode) {
-          setState({ isActive: false, rect: null, nodeKey: null })
+          clearActive()
           return
         }
 
         const isEmpty = topNode.getTextContent().trim() === ''
 
         if (!isEmpty) {
-          setState({ isActive: false, rect: null, nodeKey: null })
+          clearActive()
           return
         }
 
@@ -75,26 +62,53 @@ export function useInlineAddPlugin(): InlineAddState {
         const domEl = editor.getElementByKey(nodeKey)
 
         if (!domEl) {
-          setState({ isActive: false, rect: null, nodeKey: null })
+          clearActive()
           return
         }
 
-        setState({
-          isActive: true,
-          rect: getBlockRect(domEl),
-          nodeKey,
-        })
+        // 이전 블록의 속성 제거
+        if (prevDomElRef.current && prevDomElRef.current !== domEl) {
+          prevDomElRef.current.removeAttribute('data-inline-add')
+        }
+
+        // 현재 블록에 속성 부여
+        domEl.setAttribute('data-inline-add', 'active')
+        prevDomElRef.current = domEl
+
+        setState({ isActive: true, nodeKey })
       })
     }
 
-    return editor.registerCommand(
+    function clearActive() {
+      if (prevDomElRef.current) {
+        prevDomElRef.current.removeAttribute('data-inline-add')
+        prevDomElRef.current = null
+      }
+      setState({ isActive: false, nodeKey: null })
+    }
+
+    const unregisterSelection = editor.registerCommand(
       SELECTION_CHANGE_COMMAND,
+      () => { update(); return false },
+      COMMAND_PRIORITY_LOW,
+    )
+
+    // 마우스 클릭으로 커서를 이동할 때 SELECTION_CHANGE_COMMAND는
+    // Lexical 상태가 확정되기 전에 발생할 수 있다.
+    // CLICK_COMMAND에서 rAF로 한 프레임 뒤에 재계산하여 DOM이 확정된 후 동기화.
+    const unregisterClick = editor.registerCommand(
+      CLICK_COMMAND,
       () => {
-        update()
+        requestAnimationFrame(() => update())
         return false
       },
       COMMAND_PRIORITY_LOW,
     )
+
+    return () => {
+      unregisterSelection()
+      unregisterClick()
+    }
   }, [editor])
 
   return state
