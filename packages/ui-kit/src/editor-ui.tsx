@@ -5,7 +5,6 @@ import {
   historyExtension,
   richTextExtension,
   useBlockHoverPlugin,
-  useInlineAddPlugin,
   useSelectionPlugin,
   useSlashCommandPlugin,
 } from "@jikjo/core";
@@ -33,7 +32,6 @@ import {
 } from "lucide-react";
 import { useCallback, useMemo, type ReactNode } from "react";
 import { tv } from "tailwind-variants";
-import { BlockHandle } from "./components/block-handle";
 import { BubbleMenu } from "./components/bubble-menu";
 import { InlineAddButton } from "./components/inline-add-button";
 import { SlashMenu } from "./components/slash-menu";
@@ -64,6 +62,11 @@ export interface EditorUIProps {
   className?: string;
   /** BlockHandle의 블록 왼쪽 엣지 기준 X 오프셋(px) */
   handleOffsetX?: number;
+  /**
+   * 활성화할 UI 기능 목록. 기본값: 모두 활성화.
+   * "blockHandle" | "inlineAdd" | "slashCommand" | "bubbleMenu"
+   */
+  features?: Array<"blockHandle" | "inlineAdd" | "slashCommand" | "bubbleMenu">;
 }
 
 // ─── Default extensions ───────────────────────────────────────────────────────
@@ -73,23 +76,26 @@ const defaultExtensions: Extension[] = [richTextExtension, historyExtension];
 // ─── Inner component ──────────────────────────────────────────────────────────
 // Must live inside LexicalComposer so all hooks have editor context.
 
+const ALL_FEATURES = ["blockHandle", "inlineAdd", "slashCommand", "bubbleMenu"] as const;
+
 interface EditorInnerProps {
   extensions: Extension[];
   toolbarContent: ReactNode | false | undefined;
   handleOffsetX?: number;
+  features: Array<"blockHandle" | "inlineAdd" | "slashCommand" | "bubbleMenu">;
 }
 
 function EditorInner({
   extensions,
   toolbarContent,
   handleOffsetX,
+  features,
 }: EditorInnerProps) {
   const [editor] = useLexicalComposerContext();
 
   const selection = useSelectionPlugin();
   const slashCommand = useSlashCommandPlugin();
   const blockHover = useBlockHoverPlugin();
-  const inlineAdd = useInlineAddPlugin();
 
   // Collect slash menu items from all registered extensions
   const slashMenuItems = useMemo<SlashMenuItem[]>(
@@ -118,17 +124,17 @@ function EditorInner({
     <>
       {/* ── Toolbar ──────────────────────────────────────────────────── */}
       {toolbarContent === false ? null : toolbarContent !== undefined ? (
-        <div className="flex items-center gap-0.5 px-2 py-2 border-b border-zinc-800/50">
+        <div className="flex items-center gap-0.5 px-4 py-2 border-b border-zinc-800/50">
           {toolbarContent}
         </div>
       ) : (
-        <div className="flex items-center gap-0.5 px-2 py-2 border-b border-zinc-800/50">
+        <div className="flex items-center gap-0.5 px-4 py-2 border-b border-zinc-800/50">
           {/* Format group */}
           <div className="flex items-center gap-0.5">
             <button
               type="button"
               aria-label="Bold"
-              onClick={() => selection.toggleFormat("bold")}
+              onMouseDown={(e) => { e.preventDefault(); selection.toggleFormat("bold"); }}
               data-active={selection.format.bold}
               className={toolbarBtn()}
             >
@@ -137,7 +143,7 @@ function EditorInner({
             <button
               type="button"
               aria-label="Italic"
-              onClick={() => selection.toggleFormat("italic")}
+              onMouseDown={(e) => { e.preventDefault(); selection.toggleFormat("italic"); }}
               data-active={selection.format.italic}
               className={toolbarBtn()}
             >
@@ -146,7 +152,7 @@ function EditorInner({
             <button
               type="button"
               aria-label="Underline"
-              onClick={() => selection.toggleFormat("underline")}
+              onMouseDown={(e) => { e.preventDefault(); selection.toggleFormat("underline"); }}
               data-active={selection.format.underline}
               className={toolbarBtn()}
             >
@@ -155,7 +161,7 @@ function EditorInner({
             <button
               type="button"
               aria-label="Strikethrough"
-              onClick={() => selection.toggleFormat("strikethrough")}
+              onMouseDown={(e) => { e.preventDefault(); selection.toggleFormat("strikethrough"); }}
               data-active={selection.format.strikethrough}
               className={toolbarBtn()}
             >
@@ -164,7 +170,7 @@ function EditorInner({
             <button
               type="button"
               aria-label="Code"
-              onClick={() => selection.toggleFormat("code")}
+              onMouseDown={(e) => { e.preventDefault(); selection.toggleFormat("code"); }}
               data-active={selection.format.code}
               className={toolbarBtn()}
             >
@@ -179,7 +185,7 @@ function EditorInner({
             <button
               type="button"
               aria-label="Heading 1"
-              onClick={() => toggleHeading("h1")}
+              onMouseDown={(e) => { e.preventDefault(); toggleHeading("h1"); }}
               className={toolbarBtn()}
             >
               <Heading1 size={15} strokeWidth={2} />
@@ -187,7 +193,7 @@ function EditorInner({
             <button
               type="button"
               aria-label="Heading 2"
-              onClick={() => toggleHeading("h2")}
+              onMouseDown={(e) => { e.preventDefault(); toggleHeading("h2"); }}
               className={toolbarBtn()}
             >
               <Heading2 size={15} strokeWidth={2} />
@@ -195,7 +201,7 @@ function EditorInner({
             <button
               type="button"
               aria-label="Heading 3"
-              onClick={() => toggleHeading("h3")}
+              onMouseDown={(e) => { e.preventDefault(); toggleHeading("h3"); }}
               className={toolbarBtn()}
             >
               <Heading3 size={15} strokeWidth={2} />
@@ -205,37 +211,36 @@ function EditorInner({
       )}
 
       {/* ── Floating overlays ────────────────────────────────────────── */}
-      <BubbleMenu
-        isVisible={selection.isActive}
-        rect={selection.rect}
-        format={selection.format}
-        onToggleFormat={selection.toggleFormat}
-        editor={editor}
-      />
+      {features.includes("bubbleMenu") && (
+        <BubbleMenu
+          isVisible={selection.isActive}
+          format={selection.format}
+          onToggleFormat={selection.toggleFormat}
+          editor={editor}
+        />
+      )}
 
-      <SlashMenu
-        isVisible={slashCommand.isActive}
-        rect={slashCommand.rect}
-        query={slashCommand.query}
-        items={slashMenuItems}
-        editor={editor}
-        onClose={slashCommand.close}
-      />
+      {features.includes("slashCommand") && (
+        <SlashMenu
+          isVisible={slashCommand.isActive}
+          query={slashCommand.query}
+          items={slashMenuItems}
+          editor={editor}
+          onClose={slashCommand.close}
+        />
+      )}
 
-      {/* BlockHandle: hover 시 드래그 핸들만 표시 */}
-      <BlockHandle
-        isVisible={blockHover.isActive}
-        rect={blockHover.rect}
-        offsetX={handleOffsetX}
-      />
-
-      {/* InlineAddButton: 빈 블록에 커서(focus)가 있을 때 + 버튼 표시 */}
-      <InlineAddButton
-        isVisible={inlineAdd.isActive}
-        nodeKey={inlineAdd.nodeKey}
-        items={slashMenuItems}
-        editor={editor}
-      />
+      {/* BlockHandle + InlineAddButton: hover한 블록 옆에 drag handle과 + 버튼 함께 표시 */}
+      {(features.includes("blockHandle") || features.includes("inlineAdd")) && (
+        <InlineAddButton
+          isVisible={blockHover.isActive}
+          nodeKey={blockHover.nodeKey}
+          items={slashMenuItems}
+          editor={editor}
+          showDragHandle={features.includes("blockHandle")}
+          showAddButton={features.includes("inlineAdd")}
+        />
+      )}
     </>
   );
 }
@@ -248,6 +253,7 @@ export function EditorUI({
   toolbarContent,
   className,
   handleOffsetX,
+  features = [...ALL_FEATURES],
 }: EditorUIProps) {
   return (
     <div className={className}>
@@ -256,6 +262,7 @@ export function EditorUI({
           extensions={extensions}
           toolbarContent={toolbarContent}
           handleOffsetX={handleOffsetX}
+          features={features}
         />
       </Editor>
     </div>

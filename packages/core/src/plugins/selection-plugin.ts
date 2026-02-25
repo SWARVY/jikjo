@@ -37,6 +37,10 @@ const EMPTY_FORMAT: SelectionFormatState = {
   code: false,
 }
 
+/**
+ * DOM selection의 bounding rect를 반환.
+ * collapsed이거나 rect가 없으면 null.
+ */
 function getSelectionRect(): SelectionRect | null {
   const domSelection = window.getSelection()
 
@@ -50,7 +54,6 @@ function getSelectionRect(): SelectionRect | null {
 
   if (rect.width === 0) return null
 
-  // viewport 좌표로 저장 (page 좌표 변환 없음)
   return {
     top: rect.top,
     left: rect.left,
@@ -59,9 +62,7 @@ function getSelectionRect(): SelectionRect | null {
   }
 }
 
-function getFormatState(): SelectionFormatState {
-  const selection = $getSelection()
-
+function getFormatState(selection: ReturnType<typeof $getSelection>): SelectionFormatState {
   if (!$isRangeSelection(selection)) return EMPTY_FORMAT
 
   return {
@@ -84,13 +85,23 @@ export function useSelectionPlugin(): SelectionState & {
   })
 
   const updateSelection = useCallback(() => {
+    // Lexical state에서 selection이 non-collapsed range인지 판단 (isActive 기준)
+    const lexicalSelection = $getSelection()
+    const isNonCollapsed =
+      $isRangeSelection(lexicalSelection) && !lexicalSelection.isCollapsed()
+
+    const format = getFormatState(lexicalSelection)
+
+    if (!isNonCollapsed) {
+      setState({ isActive: false, rect: null, format: EMPTY_FORMAT })
+      return false
+    }
+
+    // 포지셔닝용 DOM rect (없어도 isActive는 true 유지)
     const rect = getSelectionRect()
-    const format = getFormatState()
-    const isActive = rect !== null
 
-    setState({ isActive, rect, format })
+    setState({ isActive: true, rect, format })
 
-    // Return false to allow other listeners to handle the command
     return false
   }, [])
 

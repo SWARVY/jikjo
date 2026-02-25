@@ -1,9 +1,9 @@
 "use client";
 
 import type { SlashMenuItem } from "@jikjo/core";
-import type { InlineAddState } from "@jikjo/core";
 import type { LexicalEditor } from "lexical";
 import {
+  GripVertical,
   Heading1,
   Heading2,
   Heading3,
@@ -22,29 +22,52 @@ import { createPortal } from "react-dom";
 
 export interface InlineAddButtonProps {
   isVisible: boolean;
-  nodeKey: InlineAddState["nodeKey"];
+  nodeKey: string | null;
   items: SlashMenuItem[];
   editor: LexicalEditor;
+  showDragHandle?: boolean;
+  showAddButton?: boolean;
 }
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
 const BUTTON_SIZE = 20;
-const BUTTON_GAP = 6;
-const CONTENT_PADDING_LEFT = 32; // .jikjo-content-editable padding-left: 2rem
+const BUTTON_GAP = 8;
 
-// ─── Icon map (tiptap style) ─────────────────────────────────────────────────
+// ─── Icon map ────────────────────────────────────────────────────────────────
 
 const ICON_MAP: Record<string, React.ReactNode> = {
-  paragraph: <Text size={15} />,
-  heading1: <Heading1 size={15} />,
-  heading2: <Heading2 size={15} />,
-  heading3: <Heading3 size={15} />,
-  bulletList: <List size={15} />,
-  orderedList: <ListOrdered size={15} />,
-  taskList: <ListTodo size={15} />,
-  quote: <Quote size={15} />,
+  paragraph: <Text size={14} strokeWidth={1.75} />,
+  heading1: <Heading1 size={14} strokeWidth={1.75} />,
+  heading2: <Heading2 size={14} strokeWidth={1.75} />,
+  heading3: <Heading3 size={14} strokeWidth={1.75} />,
+  bulletList: <List size={14} strokeWidth={1.75} />,
+  orderedList: <ListOrdered size={14} strokeWidth={1.75} />,
+  taskList: <ListTodo size={14} strokeWidth={1.75} />,
+  quote: <Quote size={14} strokeWidth={1.75} />,
 };
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+interface FixedPos {
+  top: number;
+  left: number;
+}
+
+/**
+ * 블록 엘리먼트의 viewport 기준 fixed 좌표 계산.
+ * 버튼 그룹은 블록의 왼쪽에, 수직 중앙 정렬.
+ */
+function calcFixedPos(
+  blockEl: HTMLElement,
+  totalWidth: number,
+): FixedPos {
+  const rect = blockEl.getBoundingClientRect();
+  return {
+    top: rect.top + (rect.height - BUTTON_SIZE) / 2,
+    left: rect.left - totalWidth - BUTTON_GAP,
+  };
+}
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
@@ -53,60 +76,42 @@ export function InlineAddButton({
   nodeKey,
   items,
   editor,
+  showDragHandle = true,
+  showAddButton = true,
 }: InlineAddButtonProps) {
   const [panelOpen, setPanelOpen] = useState(false);
   const [activeIndex, setActiveIndex] = useState(0);
-  const [buttonTop, setButtonTop] = useState<number | null>(null);
+  const [pos, setPos] = useState<FixedPos | null>(null);
   const panelRef = useRef<HTMLDivElement>(null);
-  const [portalContainer, setPortalContainer] = useState<HTMLElement | null>(
-    null,
-  );
 
-  // .jikjo-editor-content를 portal 컨테이너로 사용
-  useEffect(() => {
-    const rootEl = editor.getRootElement();
-    if (!rootEl) return;
-    const container = rootEl.parentElement;
-    if (container) setPortalContainer(container);
-  }, [editor]);
+  const totalWidth = (showDragHandle ? BUTTON_SIZE : 0) + (showAddButton ? BUTTON_SIZE : 0) + (showDragHandle && showAddButton ? 2 : 0);
 
-  // Lexical이 DOM을 업데이트할 때마다 버튼 top을 재계산.
-  // React state(nodeKey) 변경 → re-render → useLayoutEffect 순서보다
-  // registerUpdateListener가 DOM 확정 직후에 발생하므로 타이밍이 더 정확.
+  // nodeKey 변경 또는 DOM 업데이트마다 위치 재계산
   useEffect(() => {
     function calc() {
       if (!isVisible || !nodeKey) {
-        setButtonTop(null);
+        setPos(null);
         return;
       }
-      const domEl = editor.getElementByKey(nodeKey);
-      if (!domEl) {
-        setButtonTop(null);
+      const blockEl = editor.getElementByKey(nodeKey);
+      if (!blockEl) {
+        setPos(null);
         return;
       }
-      const rootEl = editor.getRootElement();
-      if (!rootEl) {
-        setButtonTop(null);
-        return;
-      }
-      const rootOffset = rootEl.offsetTop;
-      setButtonTop(
-        rootOffset + domEl.offsetTop + (domEl.offsetHeight - BUTTON_SIZE) / 2,
-      );
+      setPos(calcFixedPos(blockEl, totalWidth));
     }
 
-    // 즉시 한 번 실행 (키보드 이동 등 초기 반영)
     calc();
-
-    // 이후 Lexical DOM 업데이트마다 재계산
-    return editor.registerUpdateListener(() => {
-      calc();
-    });
-  }, [isVisible, nodeKey, editor]);
+    return editor.registerUpdateListener(() => calc());
+  }, [isVisible, nodeKey, editor, totalWidth]);
 
   useEffect(() => {
     if (!panelOpen) setActiveIndex(0);
   }, [panelOpen]);
+
+  useEffect(() => {
+    if (!isVisible) setPanelOpen(false);
+  }, [isVisible]);
 
   useEffect(() => {
     if (!panelOpen) return;
@@ -118,10 +123,6 @@ export function InlineAddButton({
     window.addEventListener("pointerdown", handlePointerDown);
     return () => window.removeEventListener("pointerdown", handlePointerDown);
   }, [panelOpen]);
-
-  useEffect(() => {
-    if (!isVisible) setPanelOpen(false);
-  }, [isVisible]);
 
   useEffect(() => {
     if (!panelOpen) return;
@@ -136,8 +137,10 @@ export function InlineAddButton({
         e.preventDefault();
         const item = items[activeIndex];
         if (item) {
-          item.onSelect(editor);
-          setPanelOpen(false);
+          editor.focus(() => {
+            item.onSelect(editor);
+            setPanelOpen(false);
+          });
         }
       } else if (e.key === "Escape") {
         setPanelOpen(false);
@@ -147,103 +150,136 @@ export function InlineAddButton({
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [panelOpen, items, activeIndex, editor]);
 
-  const buttonLeft = CONTENT_PADDING_LEFT - BUTTON_SIZE - BUTTON_GAP;
+  const btnBase = "flex items-center justify-center rounded transition-colors duration-100";
 
-  // 패널 top: 버튼 바로 아래 (버튼 top + BUTTON_SIZE + gap)
-  const panelTop = buttonTop !== null ? buttonTop + BUTTON_SIZE + 4 : 0;
-  // 패널 left: 버튼과 같은 left
-  const panelLeft = buttonLeft;
-
-  if (!portalContainer) return null;
+  // 패널은 + 버튼 왼쪽 기준 (drag handle이 있으면 그만큼 오른쪽으로)
+  const panelFixedLeft = pos
+    ? pos.left + (showDragHandle ? BUTTON_SIZE + 2 : 0)
+    : -9999;
+  const panelFixedTop = pos ? pos.top + BUTTON_SIZE + 4 : -9999;
 
   return createPortal(
     <>
-      {/* + 버튼 */}
+      {/* 버튼 그룹: [drag?] [+?] */}
       <AnimatePresence>
-        {isVisible && buttonTop !== null && (
-          <motion.button
-            type="button"
+        {isVisible && pos !== null && (
+          <motion.div
+            key={nodeKey ?? "buttons"}
             style={{
-              position: "absolute",
-              top: buttonTop,
-              left: buttonLeft,
-              width: BUTTON_SIZE,
+              position: "fixed",
+              top: pos.top,
+              left: pos.left,
+              width: totalWidth,
               height: BUTTON_SIZE,
               zIndex: 45,
+              display: "flex",
+              alignItems: "center",
+              gap: 2,
             }}
-            onMouseDown={(e) => {
-              e.preventDefault();
-              setPanelOpen((prev) => !prev);
-            }}
-            aria-label="Add block"
-            aria-expanded={panelOpen}
-            initial={{ opacity: 0, scale: 0.85 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.85 }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
             transition={{ duration: 0.08, ease: "easeOut" }}
-            className={[
-              "flex items-center justify-center rounded",
-              "transition-colors duration-100",
-              panelOpen
-                ? "bg-zinc-800 text-zinc-300"
-                : "text-zinc-600 hover:bg-zinc-800 hover:text-zinc-300",
-            ].join(" ")}
           >
-            <Plus size={12} strokeWidth={2.5} />
-          </motion.button>
+            {showDragHandle && (
+              <button
+                type="button"
+                aria-label="Drag to reorder"
+                style={{ width: BUTTON_SIZE, height: BUTTON_SIZE }}
+                className={`${btnBase} text-zinc-500 hover:bg-zinc-700/80 hover:text-zinc-300 cursor-grab active:cursor-grabbing`}
+              >
+                <GripVertical size={13} strokeWidth={2} />
+              </button>
+            )}
+            {showAddButton && (
+              <button
+                type="button"
+                aria-label="Add block"
+                aria-expanded={panelOpen}
+                style={{ width: BUTTON_SIZE, height: BUTTON_SIZE }}
+                onMouseDown={(e) => {
+                  e.preventDefault();
+                  setPanelOpen((prev) => !prev);
+                }}
+                className={[
+                  btnBase,
+                  panelOpen
+                    ? "bg-zinc-700/80 text-zinc-300"
+                    : "text-zinc-500 hover:bg-zinc-700/80 hover:text-zinc-300",
+                ].join(" ")}
+              >
+                <Plus size={12} strokeWidth={2.5} />
+              </button>
+            )}
+          </motion.div>
         )}
       </AnimatePresence>
 
-      {/* 패널: 버튼과 같은 Portal 컨테이너 안에서 absolute — 스크롤 추적 */}
+      {/* 패널 */}
       <AnimatePresence>
-        {isVisible && panelOpen && buttonTop !== null && (
+        {isVisible && panelOpen && pos !== null && (
           <motion.div
             ref={panelRef}
             style={{
-              position: "absolute",
-              top: panelTop,
-              left: panelLeft,
+              position: "fixed",
+              top: panelFixedTop,
+              left: panelFixedLeft,
               zIndex: 50,
+              width: 240,
             }}
             initial={{ opacity: 0, y: -4 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -4 }}
             transition={{ duration: 0.1, ease: "easeOut" }}
-            className="w-52 rounded-xl bg-zinc-900 shadow-xl shadow-black/40 py-1.5"
+            role="dialog"
+            aria-label="Insert block"
+            className="rounded-lg bg-zinc-800 shadow-xl shadow-black/50 py-1.5"
           >
-            {items.map((item, index) => {
-              const icon = ICON_MAP[item.id] ?? item.icon;
-              return (
-                <button
-                  key={item.id}
-                  type="button"
-                  data-active={index === activeIndex}
-                  onMouseDown={(e) => {
-                    e.preventDefault();
-                    item.onSelect(editor);
-                    setPanelOpen(false);
-                  }}
-                  onMouseEnter={() => setActiveIndex(index)}
-                  className="w-full flex items-center gap-3 px-3 py-2 text-left data-[active=true]:bg-zinc-800"
-                >
-                  <span className="flex items-center justify-center shrink-0 w-8 h-8 rounded-lg bg-zinc-800 text-zinc-300 data-[active=true]:bg-zinc-700">
-                    {icon}
-                  </span>
-                  <span className="min-w-0 flex-1">
-                    <span className="block text-[13px] font-medium text-zinc-100 leading-snug">
+            <div
+              role="listbox"
+              aria-label="Block type"
+              className="w-full px-1.5 flex flex-col"
+            >
+              {items.map((item, index) => {
+                const icon = ICON_MAP[item.id] ?? item.icon;
+                const isActive = index === activeIndex;
+                return (
+                  <button
+                    key={item.id}
+                    type="button"
+                    role="option"
+                    aria-selected={isActive}
+                    data-active={isActive}
+                    onMouseDown={(e) => {
+                      e.preventDefault();
+                      editor.focus(() => {
+                        item.onSelect(editor);
+                        setPanelOpen(false);
+                      });
+                    }}
+                    onMouseEnter={() => setActiveIndex(index)}
+                    className={[
+                      "w-full flex items-center gap-3 px-3 py-2 rounded-md text-left transition-colors duration-75",
+                      "outline-none focus-visible:outline-none",
+                      isActive
+                        ? "bg-zinc-700/80 text-zinc-100"
+                        : "text-zinc-400 hover:bg-zinc-700/60 hover:text-zinc-200 focus-visible:bg-zinc-700/80 focus-visible:text-zinc-100",
+                    ].join(" ")}
+                  >
+                    <span className="flex items-center justify-center shrink-0 w-4 text-current">
+                      {icon}
+                    </span>
+                    <span className="text-sm font-normal leading-none">
                       {item.label}
                     </span>
-                    <span className="block text-[11px] text-zinc-500 truncate leading-snug">
-                      {item.description}
-                    </span>
-                  </span>
-                </button>
-              );
-            })}
+                  </button>
+                );
+              })}
+            </div>
           </motion.div>
         )}
       </AnimatePresence>
     </>,
-    portalContainer,
+    document.body,
   );
 }

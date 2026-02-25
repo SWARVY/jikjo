@@ -1,7 +1,7 @@
 "use client";
 
+import type { SelectionFormatState } from "@jikjo/core";
 import type { LexicalEditor } from "lexical";
-import type { SelectionFormatState, SelectionRect } from "@jikjo/core";
 import { Bold, Code, Italic, Strikethrough, Underline } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useState } from "react";
@@ -11,10 +11,39 @@ import { createPortal } from "react-dom";
 
 export interface BubbleMenuProps {
   isVisible: boolean;
-  rect: SelectionRect | null;
   format: SelectionFormatState;
   onToggleFormat: (format: keyof SelectionFormatState) => void;
   editor: LexicalEditor;
+}
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+interface AbsolutePos {
+  top: number;
+  left: number;
+}
+
+/**
+ * selection rect를 컨테이너 기준 absolute 좌표로 변환.
+ * 컨테이너가 스크롤되어도 absolute 요소는 함께 움직인다.
+ */
+function getSelectionAbsPos(container: HTMLElement): AbsolutePos | null {
+  const sel = window.getSelection();
+  if (!sel || sel.rangeCount === 0) return null;
+  const range = sel.getRangeAt(0);
+  if (range.collapsed) return null;
+
+  const selRect = range.getBoundingClientRect();
+  if (selRect.width === 0) return null;
+
+  const cr = container.getBoundingClientRect();
+  const MENU_HEIGHT = 36;
+  const GAP = 6;
+
+  return {
+    top: selRect.top - cr.top + container.scrollTop - MENU_HEIGHT - GAP,
+    left: selRect.left - cr.left + container.scrollLeft + selRect.width / 2,
+  };
 }
 
 // ─── Button ───────────────────────────────────────────────────────────────────
@@ -52,49 +81,50 @@ function Btn({
 
 export function BubbleMenu({
   isVisible,
-  rect,
   format,
   onToggleFormat,
   editor,
 }: BubbleMenuProps) {
-  const [portalContainer, setPortalContainer] = useState<HTMLElement | null>(
-    null,
-  );
+  const [container, setContainer] = useState<HTMLElement | null>(null);
+  const [pos, setPos] = useState<AbsolutePos | null>(null);
 
+  // editor.getRootElement()가 준비된 후 container를 설정
   useEffect(() => {
-    const rootEl = editor.getRootElement();
-    if (!rootEl) return;
-    const container = rootEl.parentElement;
-    if (container) setPortalContainer(container);
+    function attachContainer() {
+      const rootEl = editor.getRootElement();
+      if (!rootEl) return;
+      const parent = rootEl.parentElement;
+      if (parent) setContainer(parent);
+    }
+    attachContainer();
+    return editor.registerRootListener(attachContainer);
   }, [editor]);
 
-  // viewport 좌표 → container 기준 absolute 좌표
-  // 메뉴는 선택 영역 상단 중앙에 위치
-  // translateX(-50%)는 Framer Motion style과 충돌하므로 left 계산에 직접 반영
-  let menuTop = -9999;
-  let menuLeft = -9999;
-  if (rect && portalContainer) {
-    const cr = portalContainer.getBoundingClientRect();
-    const MENU_HEIGHT = 36;
-    const GAP = 6;
-    menuTop = rect.top - cr.top - MENU_HEIGHT - GAP;
-    // center of selection, offset will be applied via CSS margin-left trick
-    menuLeft = rect.left - cr.left + rect.width / 2;
-  }
+  // selection 변화 또는 isVisible 변화 시 좌표 재계산.
+  // isVisible=false 될 때만 pos를 null로 초기화 (format 적용 중에는 이전 pos 유지).
+  useEffect(() => {
+    if (!isVisible || !container) {
+      setPos(null);
+      return;
+    }
+    const newPos = getSelectionAbsPos(container);
+    // newPos가 null이면 이전 pos 유지 (format 적용 직후 DOM rect가 잠시 없을 때 대비)
+    if (newPos !== null) {
+      setPos(newPos);
+    }
+  }, [isVisible, container]);
 
-  if (!portalContainer) return null;
+  if (!container) return null;
+
+  const menuStyle = pos
+    ? { position: "absolute" as const, top: pos.top, left: pos.left, x: "-50%", zIndex: 50 }
+    : { position: "absolute" as const, top: -9999, left: -9999, zIndex: 50 };
 
   return createPortal(
     <AnimatePresence>
       {isVisible && (
         <motion.div
-          style={{
-            position: "absolute",
-            top: menuTop,
-            left: menuLeft,
-            x: "-50%",
-            zIndex: 50,
-          }}
+          style={menuStyle}
           initial={{ opacity: 0, y: 6 }}
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: 6 }}
@@ -157,6 +187,6 @@ export function BubbleMenu({
         </motion.div>
       )}
     </AnimatePresence>,
-    portalContainer,
+    container,
   );
 }

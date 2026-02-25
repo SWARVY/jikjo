@@ -2,11 +2,10 @@ import {
   $getSelection,
   $isRangeSelection,
   COMMAND_PRIORITY_LOW,
-  KEY_DOWN_COMMAND,
   KEY_ESCAPE_COMMAND,
 } from "lexical";
 import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 export interface SlashCommandRect {
   top: number;
@@ -21,30 +20,19 @@ export interface SlashCommandState {
 
 function getCaretRect(): SlashCommandRect | null {
   const domSelection = window.getSelection();
-
   if (!domSelection || domSelection.rangeCount === 0) return null;
 
   const range = domSelection.getRangeAt(0).cloneRange();
   range.collapse(true);
-
   const rect = range.getBoundingClientRect();
 
-  // viewport 좌표로 저장 (page 좌표 변환 없음)
-  return {
-    top: rect.bottom,
-    left: rect.left,
-  };
+  return { top: rect.bottom, left: rect.left };
 }
 
 function getCurrentLineText(): string {
   const selection = $getSelection();
-
   if (!$isRangeSelection(selection)) return "";
-
-  const anchor = selection.anchor;
-  const anchorNode = anchor.getNode();
-
-  return anchorNode.getTextContent();
+  return selection.anchor.getNode().getTextContent();
 }
 
 export function useSlashCommandPlugin(): SlashCommandState & {
@@ -57,42 +45,52 @@ export function useSlashCommandPlugin(): SlashCommandState & {
     query: "",
   });
 
+  // ref로 isActive를 추적하여 클로저 stale 문제 방지
+  const isActiveRef = useRef(false);
+
   const close = useCallback(() => {
+    isActiveRef.current = false;
     setState({ isActive: false, rect: null, query: "" });
   }, []);
 
   useEffect(() => {
-    const unregisterKeyDown = editor.registerCommand(
-      KEY_DOWN_COMMAND,
-      (event: KeyboardEvent) => {
-        if (event.key !== "/") return false;
+    // updateListener 하나로 통합: keydown 감지 + 매 업데이트마다 상태 동기화
+    const unregisterUpdate = editor.registerUpdateListener(({ editorState }) => {
+      editorState.read(() => {
+        const selection = $getSelection();
+        if (!$isRangeSelection(selection) || !selection.isCollapsed()) {
+          if (isActiveRef.current) close();
+          return;
+        }
 
-        editor.getEditorState().read(() => {
-          const selection = $getSelection();
+        const lineText = getCurrentLineText();
+        const slashIndex = lineText.lastIndexOf("/");
 
-          if (!$isRangeSelection(selection)) return;
-          if (!selection.isCollapsed()) return;
+        if (slashIndex === -1) {
+          // '/'가 없으면 비활성화
+          if (isActiveRef.current) close();
+          return;
+        }
 
-          const lineText = getCurrentLineText();
-          const isAtLineStart = lineText.trim() === "";
+        // '/' 앞의 텍스트가 없거나 공백만 있어야 함 (빈 라인에서 / 입력)
+        const beforeSlash = lineText.slice(0, slashIndex);
+        if (beforeSlash.trim() !== "") {
+          if (isActiveRef.current) close();
+          return;
+        }
 
-          if (!isAtLineStart) return;
+        const query = lineText.slice(slashIndex + 1);
+        const rect = getCaretRect();
 
-          // rect는 아직 '/'가 DOM에 없는 타이밍이므로 null로 설정.
-          // updateListener에서 '/'가 렌더링된 후 올바른 캐럿 위치를 계산한다.
-          setState({ isActive: true, rect: null, query: "" });
-        });
-
-        return false;
-      },
-      COMMAND_PRIORITY_LOW,
-    );
+        isActiveRef.current = true;
+        setState({ isActive: true, rect, query });
+      });
+    });
 
     const unregisterEscape = editor.registerCommand(
       KEY_ESCAPE_COMMAND,
       () => {
-        if (!state.isActive) return false;
-
+        if (!isActiveRef.current) return false;
         close();
         return true;
       },
@@ -100,34 +98,10 @@ export function useSlashCommandPlugin(): SlashCommandState & {
     );
 
     return () => {
-      unregisterKeyDown();
+      unregisterUpdate();
       unregisterEscape();
     };
-  }, [editor, state.isActive, close]);
-
-  useEffect(() => {
-    if (!state.isActive) return;
-
-    const unregister = editor.registerUpdateListener(({ editorState }) => {
-      editorState.read(() => {
-        const lineText = getCurrentLineText();
-        const slashIndex = lineText.lastIndexOf("/");
-
-        if (slashIndex === -1) {
-          close();
-          return;
-        }
-
-        const query = lineText.slice(slashIndex + 1);
-        // '/'가 DOM에 반영된 후 매 업데이트마다 캐럿 위치를 새로 계산하여
-        // 메뉴가 항상 현재 커서 바로 아래에 정확히 붙도록 한다.
-        const rect = getCaretRect();
-        setState((prev) => ({ ...prev, rect, query }));
-      });
-    });
-
-    return unregister;
-  }, [editor, state.isActive, close]);
+  }, [editor, close]);
 
   return { ...state, close };
 }

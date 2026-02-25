@@ -85,3 +85,34 @@ body {
   user-select: none;
   margin: 0;
 }
+
+/* ── Text format styles ───────────────────────────────────────────────────────
+   Lexical theme.text 클래스에 대응하는 시각적 스타일 */
+.jikjo-text-bold {
+  font-weight: 700;
+}
+
+.jikjo-text-italic {
+  font-style: italic;
+}
+
+.jikjo-text-underline {
+  text-decoration: underline;
+}
+
+.jikjo-text-strikethrough {
+  text-decoration: line-through;
+}
+
+.jikjo-text-underline.jikjo-text-strikethrough {
+  text-decoration: underline line-through;
+}
+
+.jikjo-text-code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.875em;
+  background-color: #27272a;
+  color: #a78bfa;
+  padding: 0.1em 0.35em;
+  border-radius: 0.25rem;
+}

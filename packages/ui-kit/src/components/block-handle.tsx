@@ -11,8 +11,8 @@ const handleBtn = tv({
   base: [
     "flex items-center justify-center",
     "w-5 h-5 rounded",
-    "text-zinc-600 transition-colors duration-100",
-    "hover:bg-zinc-800 hover:text-zinc-400",
+    "text-zinc-500 transition-colors duration-100",
+    "hover:bg-zinc-700/80 hover:text-zinc-300",
     "cursor-grab active:cursor-grabbing",
   ],
 });
@@ -31,7 +31,7 @@ export interface BlockHandleProps {
 export function BlockHandle({
   isVisible,
   rect,
-  offsetX = -28,
+  offsetX = -24,
 }: BlockHandleProps) {
   const HANDLE_HEIGHT = 20;
 

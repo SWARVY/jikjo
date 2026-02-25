@@ -25,7 +25,10 @@ function replaceWithNode(create: () => ElementNode): SlashMenuItem['onSelect'] {
       if (!$isRangeSelection(selection)) return
       const node = selection.anchor.getNode()
       const topNode = node.getTopLevelElementOrThrow()
-      topNode.replace(create())
+      // 슬래시 메뉴에서 선택 시 현재 라인의 텍스트(/ + query)를 지우고 새 빈 블록으로 교체
+      const newNode = create()
+      topNode.replace(newNode)
+      newNode.select()
     })
   }
 }
@@ -79,7 +82,7 @@ export const richTextExtension: Extension = {
     createElement(RichTextPlugin, {
       contentEditable: createElement(
         'div',
-        { className: 'jikjo-editor-content' },
+        { className: 'jikjo-editor-content', style: { position: 'relative' } },
         createElement(ContentEditable, {
           className: 'jikjo-content-editable',
           'aria-placeholder': 'Type something, or press / for commands…',

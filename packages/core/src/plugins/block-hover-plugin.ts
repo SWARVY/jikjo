@@ -72,57 +72,98 @@ export function useBlockHoverPlugin(): BlockHoverState {
   const activeKeyRef = useRef<string | null>(null)
 
   useEffect(() => {
-    const editorRoot = editor.getRootElement()
+    let cleanup: (() => void) | null = null
 
-    if (!editorRoot) return
+    const unregisterRoot = editor.registerRootListener((rootElement) => {
+      // 이전 리스너 정리
+      if (cleanup) {
+        cleanup()
+        cleanup = null
+      }
 
-    function handleMouseMove(event: MouseEvent) {
-      const blockEl = findBlockElement(event.target, editorRoot!)
-
-      if (!blockEl) {
-        // Cursor left all known blocks
-        setState({ isActive: false, rect: null, nodeKey: null })
-        activeKeyRef.current = null
+      if (!rootElement) {
+        console.log('[BlockHover] rootElement is null')
         return
       }
 
-      // Read the nodeKey from Lexical state
-      let nodeKey: string | null = null
+      console.log('[BlockHover] rootElement attached:', rootElement)
+      const container = rootElement.parentElement ?? rootElement
+      console.log('[BlockHover] container:', container)
 
-      editor.getEditorState().read(() => {
-        const lexicalNode = $getNearestNodeFromDOMNode(blockEl)
+      let leaveTimer: ReturnType<typeof setTimeout> | null = null
 
-        if (!lexicalNode) return
-        if (!$isElementNode(lexicalNode)) return
+      function handleDocumentMouseMove(event: MouseEvent) {
+        const target = event.target
+        const inside = container.contains(target as Node)
+        if (target instanceof HTMLElement && target.closest('[data-lexical-editor]')) {
+          console.log('[BlockHover] mousemove target:', target.tagName, 'inside container:', inside)
+        }
 
-        nodeKey = lexicalNode.getKey()
-      })
+        // Check if mouse is inside the container (editor area)
+        if (inside) {
+          // Cancel any pending leave
+          if (leaveTimer !== null) {
+            clearTimeout(leaveTimer)
+            leaveTimer = null
+          }
 
-      if (!nodeKey) return
+          const blockEl = findBlockElement(target, rootElement!)
 
-      // Skip redundant updates when hovering within the same block
-      if (nodeKey === activeKeyRef.current) return
+          if (!blockEl) {
+            // Inside container but not over a block (e.g. padding area)
+            return
+          }
 
-      activeKeyRef.current = nodeKey
+          let nodeKey: string | null = null
 
-      setState({
-        isActive: true,
-        rect: buildBlockRect(blockEl),
-        nodeKey,
-      })
-    }
+          editor.getEditorState().read(() => {
+            const lexicalNode = $getNearestNodeFromDOMNode(blockEl)
+            if (!lexicalNode) {
+              console.log('[BlockHover] $getNearestNodeFromDOMNode returned null for', blockEl)
+              return
+            }
+            if (!$isElementNode(lexicalNode)) {
+              console.log('[BlockHover] node is not element node:', lexicalNode)
+              return
+            }
+            nodeKey = lexicalNode.getKey()
+          })
 
-    function handleMouseLeave() {
-      setState({ isActive: false, rect: null, nodeKey: null })
-      activeKeyRef.current = null
-    }
+          if (!nodeKey) return
+          if (nodeKey === activeKeyRef.current) return
 
-    editorRoot.addEventListener('mousemove', handleMouseMove)
-    editorRoot.addEventListener('mouseleave', handleMouseLeave)
+          activeKeyRef.current = nodeKey
+          setState({
+            isActive: true,
+            rect: buildBlockRect(blockEl),
+            nodeKey,
+          })
+        } else {
+          // Mouse is outside the container — schedule deactivation with a delay
+          // so that moving to the floating buttons doesn't flicker
+          if (leaveTimer !== null) return
+          leaveTimer = setTimeout(() => {
+            leaveTimer = null
+            setState({ isActive: false, rect: null, nodeKey: null })
+            activeKeyRef.current = null
+          }, 150)
+        }
+      }
+
+      document.addEventListener('mousemove', handleDocumentMouseMove)
+
+      cleanup = () => {
+        document.removeEventListener('mousemove', handleDocumentMouseMove)
+        if (leaveTimer !== null) {
+          clearTimeout(leaveTimer)
+          leaveTimer = null
+        }
+      }
+    })
 
     return () => {
-      editorRoot.removeEventListener('mousemove', handleMouseMove)
-      editorRoot.removeEventListener('mouseleave', handleMouseLeave)
+      unregisterRoot()
+      if (cleanup) cleanup()
     }
   }, [editor])
 

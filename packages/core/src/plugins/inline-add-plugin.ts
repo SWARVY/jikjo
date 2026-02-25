@@ -3,6 +3,7 @@ import {
   $isRangeSelection,
   CLICK_COMMAND,
   COMMAND_PRIORITY_LOW,
+  KEY_DOWN_COMMAND,
   SELECTION_CHANGE_COMMAND,
 } from 'lexical'
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
@@ -105,9 +106,25 @@ export function useInlineAddPlugin(): InlineAddState {
       COMMAND_PRIORITY_LOW,
     )
 
+    // 방향키로 커서를 이동할 때는 SELECTION_CHANGE_COMMAND가 발생하기 전에
+    // KEY_DOWN_COMMAND가 먼저 발생한다. KEY_DOWN 직후 rAF를 통해 DOM 업데이트
+    // 이후에 재계산하여 버튼 위치를 커서와 동기화한다.
+    const unregisterKeyDown = editor.registerCommand(
+      KEY_DOWN_COMMAND,
+      (event: KeyboardEvent) => {
+        const arrowKeys = ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight']
+        if (arrowKeys.includes(event.key)) {
+          requestAnimationFrame(() => update())
+        }
+        return false
+      },
+      COMMAND_PRIORITY_LOW,
+    )
+
     return () => {
       unregisterSelection()
       unregisterClick()
+      unregisterKeyDown()
     }
   }, [editor])
 

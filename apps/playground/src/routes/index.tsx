@@ -3,7 +3,6 @@ import { EditorUI } from "@jikjo/ui-kit";
 import {
   historyExtension,
   richTextExtension,
-  useSelectionPlugin,
 } from "@jikjo/core";
 import type { Extension } from "@jikjo/core";
 import { OnChangePlugin } from "@lexical/react/LexicalOnChangePlugin";
@@ -15,10 +14,6 @@ import {
   Code2,
   ChevronRight,
   Sparkles,
-  Bold,
-  Italic,
-  Underline,
-  Strikethrough,
 } from "lucide-react";
 import { createElement, useState, useCallback, useMemo } from "react";
 
@@ -119,70 +114,23 @@ function HeroSection() {
 
 const defaultExtensions: Extension[] = [richTextExtension, historyExtension];
 
-// Notion-like: full features — slash commands, inline + button, bubble menu
+// Notion-like: full features — slash commands, inline + button, bubble menu, drag handle
 function NotionLikePreview() {
   return (
-    <div className="rounded-xl overflow-hidden border border-zinc-800 bg-zinc-900/60 shadow-2xl shadow-black/40">
-      <EditorUI className="flex flex-col" />
+    <div className="rounded-xl border border-zinc-800 bg-zinc-900/60 shadow-2xl shadow-black/40">
+      <EditorUI className="flex flex-col rounded-xl" />
     </div>
   );
 }
 
-// Simple toolbar inner — uses lucide icons, text-format only
-function SimpleToolbar() {
-  const selection = useSelectionPlugin();
-
-  const btn = (active: boolean) =>
-    [
-      "flex items-center justify-center w-8 h-8 rounded-md transition-all duration-100",
-      active
-        ? "bg-zinc-700/80 text-zinc-100"
-        : "text-zinc-500 hover:bg-zinc-800 hover:text-zinc-200",
-    ].join(" ");
-
-  return (
-    <div className="flex items-center gap-0.5">
-      <button
-        type="button"
-        aria-label="Bold"
-        onMouseDown={(e) => { e.preventDefault(); selection.toggleFormat("bold"); }}
-        className={btn(selection.format.bold)}
-      >
-        <Bold size={14} strokeWidth={2.5} />
-      </button>
-      <button
-        type="button"
-        aria-label="Italic"
-        onMouseDown={(e) => { e.preventDefault(); selection.toggleFormat("italic"); }}
-        className={btn(selection.format.italic)}
-      >
-        <Italic size={14} strokeWidth={2.5} />
-      </button>
-      <button
-        type="button"
-        aria-label="Underline"
-        onMouseDown={(e) => { e.preventDefault(); selection.toggleFormat("underline"); }}
-        className={btn(selection.format.underline)}
-      >
-        <Underline size={14} strokeWidth={2.5} />
-      </button>
-      <button
-        type="button"
-        aria-label="Strikethrough"
-        onMouseDown={(e) => { e.preventDefault(); selection.toggleFormat("strikethrough"); }}
-        className={btn(selection.format.strikethrough)}
-      >
-        <Strikethrough size={14} strokeWidth={2.5} />
-      </button>
-    </div>
-  );
-}
-
-// Simple: custom minimal toolbar, no slash/inline-add UI
+// Simple: text formatting only — no slash commands, no inline-add, no drag handle
 function SimplePreview() {
   return (
-    <div className="rounded-xl overflow-hidden border border-zinc-800 bg-zinc-900/60 shadow-2xl shadow-black/40">
-      <EditorUI className="flex flex-col" toolbarContent={<SimpleToolbar />} />
+    <div className="rounded-xl border border-zinc-800 bg-zinc-900/60 shadow-2xl shadow-black/40">
+      <EditorUI
+        className="flex flex-col rounded-xl"
+        features={["bubbleMenu"]}
+      />
     </div>
   );
 }
@@ -209,6 +157,7 @@ function HeadlessInner({ onStateChange }: { onStateChange: (json: string) => voi
     <EditorUI
       className="flex flex-col flex-1"
       toolbarContent={false}
+      features={[]}
       extensions={[...defaultExtensions, onChangeExtension]}
     />
   );
