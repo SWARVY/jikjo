@@ -1,0 +1,50 @@
+{
+  "name": "@jikjo/image",
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Image extension for jikjo editor — supports URL input and file upload",
+  "keywords": ["lexical", "editor", "jikjo", "image", "upload"],
+  "author": "SWARVY",
+  "license": "MIT",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
+      }
+    }
+  },
+  "files": ["dist"],
+  "scripts": {
+    "build": "tsdown",
+    "dev": "tsdown --watch",
+    "check-types": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@jikjo/core": "workspace:*"
+  },
+  "peerDependencies": {
+    "@lexical/react": "^0.38.0",
+    "lexical": "^0.38.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "devDependencies": {
+    "@jikjo/typescript-config": "workspace:*",
+    "@lexical/react": "^0.38.2",
+    "@types/react": "^19.1.8",
+    "@types/react-dom": "^19.1.6",
+    "lexical": "^0.38.2",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
+    "tsdown": "^0.12.7",
+    "typescript": "5.9.2"
+  }
+}
