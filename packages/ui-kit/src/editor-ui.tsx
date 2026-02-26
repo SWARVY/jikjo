@@ -17,6 +17,7 @@ import {
 import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext";
 import {
   $createParagraphNode,
+  $getNearestNodeFromDOMNode,
   $getSelection,
   $isRangeSelection,
 } from "lexical";
@@ -30,23 +31,71 @@ import {
   Strikethrough,
   Underline,
 } from "lucide-react";
-import { useCallback, useMemo, type ReactNode } from "react";
-import { tv } from "tailwind-variants";
+import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from "react";
+import type { MouseEvent } from "react";
 import { BubbleMenu } from "./components/bubble-menu";
-import { InlineAddButton } from "./components/inline-add-button";
+import { BlockToolbar } from "./components/block-toolbar";
 import { SlashMenu } from "./components/slash-menu";
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
 
-const toolbarBtn = tv({
-  base: [
-    "flex items-center justify-center",
-    "w-8 h-8 rounded-md",
-    "text-zinc-500 transition-all duration-100",
-    "hover:bg-zinc-800 hover:text-zinc-200",
-    "data-[active=true]:bg-zinc-700/80 data-[active=true]:text-zinc-100",
-  ],
-});
+const tbtnBase: CSSProperties = {
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  width: 32,
+  height: 32,
+  borderRadius: 6,
+  border: "none",
+  background: "transparent",
+  color: "#71717a",
+  cursor: "pointer",
+  padding: 0,
+  transition: "background 100ms, color 100ms",
+  flexShrink: 0,
+};
+
+const tbtnHover: CSSProperties = {
+  background: "rgba(39,39,42,0.9)",
+  color: "#e4e4e7",
+};
+
+const tbtnActive: CSSProperties = {
+  background: "rgba(63,63,70,0.8)",
+  color: "#f4f4f5",
+};
+
+// ─── ToolbarButton ─────────────────────────────────────────────────────────────
+
+interface ToolbarButtonProps {
+  label: string;
+  isActive?: boolean;
+  onMouseDown: (e: MouseEvent) => void;
+  children: ReactNode;
+}
+
+function ToolbarButton({ label, isActive, onMouseDown, children }: ToolbarButtonProps) {
+  const [hovered, setHovered] = useState(false);
+
+  const style: CSSProperties = {
+    ...tbtnBase,
+    ...(hovered ? tbtnHover : {}),
+    ...(isActive ? tbtnActive : {}),
+  };
+
+  return (
+    <button
+      type="button"
+      aria-label={label}
+      onMouseDown={onMouseDown}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      style={style}
+    >
+      {children}
+    </button>
+  );
+}
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -60,8 +109,6 @@ export interface EditorUIProps {
    */
   toolbarContent?: ReactNode | false;
   className?: string;
-  /** BlockHandle의 블록 왼쪽 엣지 기준 X 오프셋(px) */
-  handleOffsetX?: number;
   /**
    * 활성화할 UI 기능 목록. 기본값: 모두 활성화.
    * "blockHandle" | "inlineAdd" | "slashCommand" | "bubbleMenu"
@@ -81,14 +128,12 @@ const ALL_FEATURES = ["blockHandle", "inlineAdd", "slashCommand", "bubbleMenu"] 
 interface EditorInnerProps {
   extensions: Extension[];
   toolbarContent: ReactNode | false | undefined;
-  handleOffsetX?: number;
   features: Array<"blockHandle" | "inlineAdd" | "slashCommand" | "bubbleMenu">;
 }
 
 function EditorInner({
   extensions,
   toolbarContent,
-  handleOffsetX,
   features,
 }: EditorInnerProps) {
   const [editor] = useLexicalComposerContext();
@@ -97,24 +142,125 @@ function EditorInner({
   const slashCommand = useSlashCommandPlugin();
   const blockHover = useBlockHoverPlugin();
 
+  // heading 태그는 Lexical selection으로 추적 (toolbar 표시용)
+  const [currentHeadingTag, setCurrentHeadingTag] = useState<HeadingTagType | null>(null);
+
+  // focusedNodeKey: Lexical selection에서 완전히 독립.
+  // - 에디터 click → DOM에서 직접 nodeKey 읽기
+  // - dragstart → onDragStarted 콜백으로 nodeKey 전달
+  // - drop 성공 → onDropped 콜백으로 이동된 nodeKey 전달
+  // - dragend(취소) → null
+  // - 에디터 바깥 클릭 → null
+  const [focusedNodeKey, setFocusedNodeKey] = useState<string | null>(null);
+
+  // drop 성공 플래그 (dragend 시 취소인지 성공인지 구분용)
+  const dropSucceededRef = useRef(false);
+
+  // ── heading tag 추적 (selection 기반, toolbar 전용) ──────────────────────
+
+  useEffect(() => {
+    return editor.registerUpdateListener(({ editorState }) => {
+      editorState.read(() => {
+        const sel = $getSelection();
+        if (!$isRangeSelection(sel)) {
+          setCurrentHeadingTag(null);
+          return;
+        }
+        const topNode = sel.anchor.getNode().getTopLevelElement();
+        setCurrentHeadingTag($isHeadingNode(topNode) ? topNode.getTag() : null);
+      });
+    });
+  }, [editor]);
+
+  // ── focusedNodeKey: 에디터 click 이벤트에서 DOM → nodeKey 직접 읽기 ──────
+
+  useEffect(() => {
+    return editor.registerRootListener((rootElement) => {
+      if (!rootElement) return;
+      const root = rootElement;
+
+      function onClick(e: Event) {
+        const target = e.target as HTMLElement | null;
+        if (!target) return;
+        let key: string | null = null;
+        editor.read(() => {
+          const node = $getNearestNodeFromDOMNode(target);
+          if (!node) return;
+          const top = node.isInline() ? node.getTopLevelElement() : node;
+          if (top) key = top.getKey();
+        });
+        if (key) setFocusedNodeKey(key);
+      }
+
+      // 에디터/툴바 바깥 클릭 시 커서 인디케이터 제거
+      function onDocClick(e: Event) {
+        const target = e.target as HTMLElement | null;
+        if (root.contains(target)) return;
+        if (target?.closest("[data-block-toolbar]") || target?.closest("[data-drag-handle]")) return;
+        setFocusedNodeKey(null);
+      }
+
+      root.addEventListener("click", onClick);
+      document.addEventListener("click", onDocClick, true);
+
+      return () => {
+        root.removeEventListener("click", onClick);
+        document.removeEventListener("click", onDocClick, true);
+      };
+    });
+  }, [editor]);
+
+  // ── drag/drop 이벤트에서 focusedNodeKey 관리 ────────────────────────────
+  // Firefox: drag handle mousedown → blur → dragstart 순서로 발생.
+  // blur 시 Lexical이 $setSelection(null)을 호출하지만,
+  // focusedNodeKey는 Lexical selection과 독립이므로 영향받지 않음.
+  // drop 성공/취소는 onDropped / dragend 이벤트로 구분.
+
+  const handleDragStarted = useCallback((key: string) => {
+    dropSucceededRef.current = false;
+    setFocusedNodeKey(key);
+    // Firefox blur로 에디터 포커스가 빠진 경우 복구
+    editor.focus();
+  }, [editor]);
+
+  const handleDropped = useCallback((key: string) => {
+    dropSucceededRef.current = true;
+    setFocusedNodeKey(key);
+    // drop 후 에디터 포커스 복구
+    editor.focus();
+  }, [editor]);
+
+  useEffect(() => {
+    function onDragEnd() {
+      if (!dropSucceededRef.current) {
+        // drag 취소: 커서 인디케이터 제거
+        setFocusedNodeKey(null);
+      }
+      dropSucceededRef.current = false;
+    }
+    document.addEventListener("dragend", onDragEnd);
+    return () => document.removeEventListener("dragend", onDragEnd);
+  }, []);
+
   // Collect slash menu items from all registered extensions
   const slashMenuItems = useMemo<SlashMenuItem[]>(
     () => extensions.flatMap((ext) => ext.slashMenuItems ?? []),
     [extensions],
   );
 
-  // Toggle heading: if already at this level, revert to paragraph
+  // Toggle heading: if already at this level, revert to paragraph.
+  // newNode.select() preserves selection after replace to avoid Lexical error.
   const toggleHeading = useCallback(
     (tag: HeadingTagType) => {
       editor.update(() => {
         const sel = $getSelection();
         if (!$isRangeSelection(sel)) return;
         const topNode = sel.anchor.getNode().getTopLevelElementOrThrow();
-        if ($isHeadingNode(topNode) && topNode.getTag() === tag) {
-          topNode.replace($createParagraphNode());
-        } else {
-          topNode.replace($createHeadingNode(tag));
-        }
+        const newNode = ($isHeadingNode(topNode) && topNode.getTag() === tag)
+          ? $createParagraphNode()
+          : $createHeadingNode(tag);
+        topNode.replace(newNode);
+        newNode.select();
       });
     },
     [editor],
@@ -124,88 +270,75 @@ function EditorInner({
     <>
       {/* ── Toolbar ──────────────────────────────────────────────────── */}
       {toolbarContent === false ? null : toolbarContent !== undefined ? (
-        <div className="flex items-center gap-0.5 px-4 py-2 border-b border-zinc-800/50">
+        <div style={{ display: "flex", alignItems: "center", gap: 2, padding: "8px 16px", borderBottom: "1px solid rgba(39,39,42,0.5)" }}>
           {toolbarContent}
         </div>
       ) : (
-        <div className="flex items-center gap-0.5 px-4 py-2 border-b border-zinc-800/50">
+        <div style={{ display: "flex", alignItems: "center", gap: 2, padding: "8px 16px", borderBottom: "1px solid rgba(39,39,42,0.5)" }}>
           {/* Format group */}
-          <div className="flex items-center gap-0.5">
-            <button
-              type="button"
-              aria-label="Bold"
+          <div style={{ display: "flex", alignItems: "center", gap: 2 }}>
+            <ToolbarButton
+              label="Bold"
+              isActive={selection.format.bold}
               onMouseDown={(e) => { e.preventDefault(); selection.toggleFormat("bold"); }}
-              data-active={selection.format.bold}
-              className={toolbarBtn()}
             >
               <Bold size={14} strokeWidth={2.5} />
-            </button>
-            <button
-              type="button"
-              aria-label="Italic"
+            </ToolbarButton>
+            <ToolbarButton
+              label="Italic"
+              isActive={selection.format.italic}
               onMouseDown={(e) => { e.preventDefault(); selection.toggleFormat("italic"); }}
-              data-active={selection.format.italic}
-              className={toolbarBtn()}
             >
               <Italic size={14} strokeWidth={2.5} />
-            </button>
-            <button
-              type="button"
-              aria-label="Underline"
+            </ToolbarButton>
+            <ToolbarButton
+              label="Underline"
+              isActive={selection.format.underline}
               onMouseDown={(e) => { e.preventDefault(); selection.toggleFormat("underline"); }}
-              data-active={selection.format.underline}
-              className={toolbarBtn()}
             >
               <Underline size={14} strokeWidth={2.5} />
-            </button>
-            <button
-              type="button"
-              aria-label="Strikethrough"
+            </ToolbarButton>
+            <ToolbarButton
+              label="Strikethrough"
+              isActive={selection.format.strikethrough}
               onMouseDown={(e) => { e.preventDefault(); selection.toggleFormat("strikethrough"); }}
-              data-active={selection.format.strikethrough}
-              className={toolbarBtn()}
             >
               <Strikethrough size={14} strokeWidth={2.5} />
-            </button>
-            <button
-              type="button"
-              aria-label="Code"
+            </ToolbarButton>
+            <ToolbarButton
+              label="Code"
+              isActive={selection.format.code}
               onMouseDown={(e) => { e.preventDefault(); selection.toggleFormat("code"); }}
-              data-active={selection.format.code}
-              className={toolbarBtn()}
             >
               <Code size={14} strokeWidth={2.5} />
-            </button>
+            </ToolbarButton>
           </div>
 
-          <div className="w-px h-4 bg-zinc-800 mx-1" />
+          <div style={{ width: 1, height: 16, background: "#27272a", margin: "0 4px" }} />
 
           {/* Heading group */}
-          <div className="flex items-center gap-0.5">
-            <button
-              type="button"
-              aria-label="Heading 1"
+          <div style={{ display: "flex", alignItems: "center", gap: 2 }}>
+            <ToolbarButton
+              label="Heading 1"
+              isActive={currentHeadingTag === "h1"}
               onMouseDown={(e) => { e.preventDefault(); toggleHeading("h1"); }}
-              className={toolbarBtn()}
             >
               <Heading1 size={15} strokeWidth={2} />
-            </button>
-            <button
-              type="button"
-              aria-label="Heading 2"
+            </ToolbarButton>
+            <ToolbarButton
+              label="Heading 2"
+              isActive={currentHeadingTag === "h2"}
               onMouseDown={(e) => { e.preventDefault(); toggleHeading("h2"); }}
-              className={toolbarBtn()}
             >
               <Heading2 size={15} strokeWidth={2} />
-            </button>
-            <button
-              type="button"
-              aria-label="Heading 3"
+            </ToolbarButton>
+            <ToolbarButton
+              label="Heading 3"
+              isActive={currentHeadingTag === "h3"}
               onMouseDown={(e) => { e.preventDefault(); toggleHeading("h3"); }}
-              className={toolbarBtn()}
             >
               <Heading3 size={15} strokeWidth={2} />
-            </button>
+            </ToolbarButton>
           </div>
         </div>
       )}
@@ -230,17 +363,18 @@ function EditorInner({
         />
       )}
 
-      {/* BlockHandle + InlineAddButton: hover한 블록 옆에 drag handle과 + 버튼 함께 표시 */}
-      {(features.includes("blockHandle") || features.includes("inlineAdd")) && (
-        <InlineAddButton
-          isVisible={blockHover.isActive}
-          nodeKey={blockHover.nodeKey}
-          items={slashMenuItems}
-          editor={editor}
-          showDragHandle={features.includes("blockHandle")}
-          showAddButton={features.includes("inlineAdd")}
-        />
-      )}
+      {/* drag handle + + 버튼 + 커서 인디케이터 */}
+      <BlockToolbar
+        isVisible={blockHover.isActive && (features.includes("blockHandle") || features.includes("inlineAdd"))}
+        nodeKey={blockHover.nodeKey}
+        focusedNodeKey={focusedNodeKey}
+        items={slashMenuItems}
+        editor={editor}
+        showDragHandle={features.includes("blockHandle")}
+        showAddButton={features.includes("inlineAdd")}
+        onDragStarted={handleDragStarted}
+        onDropped={handleDropped}
+      />
     </>
   );
 }
@@ -252,16 +386,15 @@ export function EditorUI({
   namespace = "jikjo",
   toolbarContent,
   className,
-  handleOffsetX,
   features = [...ALL_FEATURES],
 }: EditorUIProps) {
+  const hasBlockToolbar = features.includes("blockHandle") || features.includes("inlineAdd");
   return (
-    <div className={className}>
+    <div className={className} {...(hasBlockToolbar ? { "data-has-block-toolbar": "" } : {})}>
       <Editor extensions={extensions} namespace={namespace}>
         <EditorInner
           extensions={extensions}
           toolbarContent={toolbarContent}
-          handleOffsetX={handleOffsetX}
           features={features}
         />
       </Editor>

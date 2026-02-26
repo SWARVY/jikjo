@@ -9,10 +9,6 @@ export type { BubbleMenuProps } from './components/bubble-menu'
 export { SlashMenu } from './components/slash-menu'
 export type { SlashMenuProps } from './components/slash-menu'
 
-// Block handle (includes add-block panel)
-export { BlockHandle } from './components/block-handle'
-export type { BlockHandleProps } from './components/block-handle'
-
-// Inline add button
-export { InlineAddButton } from './components/inline-add-button'
-export type { InlineAddButtonProps } from './components/inline-add-button'
+// Block toolbar (drag handle + add-block panel)
+export { BlockToolbar } from './components/block-toolbar'
+export type { BlockToolbarProps } from './components/block-toolbar'

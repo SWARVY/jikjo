@@ -17,6 +17,7 @@ export default defineConfig({
   resolve: {
     alias: {
       "@jikjo/core": path.resolve(__dirname, "../../packages/core/src/index.ts"),
+      "@jikjo/image": path.resolve(__dirname, "../../packages/image/src/index.ts"),
       "@jikjo/ui-kit": path.resolve(__dirname, "../../packages/ui-kit/src/index.ts"),
     },
   },

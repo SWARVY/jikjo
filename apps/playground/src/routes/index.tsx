@@ -5,6 +5,7 @@ import {
   richTextExtension,
 } from "@jikjo/core";
 import type { Extension } from "@jikjo/core";
+import { createImageExtension } from "@jikjo/image";
 import { OnChangePlugin } from "@lexical/react/LexicalOnChangePlugin";
 import type { EditorState } from "lexical";
 import {
@@ -112,13 +113,15 @@ function HeroSection() {
 
 // ─── Editor Previews ──────────────────────────────────────────────────────────
 
+const imageExtension = createImageExtension();
 const defaultExtensions: Extension[] = [richTextExtension, historyExtension];
+const notionExtensions: Extension[] = [...defaultExtensions, imageExtension];
 
 // Notion-like: full features — slash commands, inline + button, bubble menu, drag handle
 function NotionLikePreview() {
   return (
     <div className="rounded-xl border border-zinc-800 bg-zinc-900/60 shadow-2xl shadow-black/40">
-      <EditorUI className="flex flex-col rounded-xl" />
+      <EditorUI className="flex flex-col rounded-xl" extensions={notionExtensions} />
     </div>
   );
 }

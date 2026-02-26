@@ -3,7 +3,6 @@
 import type { SlashMenuItem } from "@jikjo/core";
 import type { LexicalEditor } from "lexical";
 import {
-  GripVertical,
   Heading1,
   Heading2,
   Heading3,
@@ -25,8 +24,6 @@ export interface InlineAddButtonProps {
   nodeKey: string | null;
   items: SlashMenuItem[];
   editor: LexicalEditor;
-  showDragHandle?: boolean;
-  showAddButton?: boolean;
 }
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -54,6 +51,27 @@ interface FixedPos {
   left: number;
 }
 
+interface PanelPos {
+  top: number;
+  left: number;
+  openUpward: boolean;
+}
+
+const PANEL_WIDTH = 240;
+const PANEL_GAP = 4;
+
+function calcPanelPosition(btnPos: FixedPos, panelHeight: number): PanelPos {
+  const spaceBelow = window.innerHeight - (btnPos.top + BUTTON_SIZE + PANEL_GAP);
+  const openUpward = spaceBelow < panelHeight;
+  return {
+    top: openUpward
+      ? btnPos.top - panelHeight - PANEL_GAP
+      : btnPos.top + BUTTON_SIZE + PANEL_GAP,
+    left: btnPos.left,
+    openUpward,
+  };
+}
+
 /**
  * 블록 엘리먼트의 viewport 기준 fixed 좌표 계산.
  * 버튼 그룹은 블록의 왼쪽에, 수직 중앙 정렬.
@@ -76,17 +94,18 @@ export function InlineAddButton({
   nodeKey,
   items,
   editor,
-  showDragHandle = true,
-  showAddButton = true,
 }: InlineAddButtonProps) {
   const [panelOpen, setPanelOpen] = useState(false);
   const [activeIndex, setActiveIndex] = useState(0);
   const [pos, setPos] = useState<FixedPos | null>(null);
+  const [panelPos, setPanelPos] = useState<PanelPos | null>(null);
+  // 패널 열릴 때의 버튼 위치 스냅샷 (위치 재계산용)
+  const btnPosRef = useRef<FixedPos | null>(null);
   const panelRef = useRef<HTMLDivElement>(null);
 
-  const totalWidth = (showDragHandle ? BUTTON_SIZE : 0) + (showAddButton ? BUTTON_SIZE : 0) + (showDragHandle && showAddButton ? 2 : 0);
+  const totalWidth = BUTTON_SIZE;
 
-  // nodeKey 변경 또는 DOM 업데이트마다 위치 재계산
+  // nodeKey 변경 또는 DOM 업데이트마다 위치 재계산 (패널이 닫혀 있을 때만)
   useEffect(() => {
     function calc() {
       if (!isVisible || !nodeKey) {
@@ -98,12 +117,31 @@ export function InlineAddButton({
         setPos(null);
         return;
       }
-      setPos(calcFixedPos(blockEl, totalWidth));
+      if (!panelOpen) {
+        setPos(calcFixedPos(blockEl, totalWidth));
+      }
     }
 
     calc();
     return editor.registerUpdateListener(() => calc());
-  }, [isVisible, nodeKey, editor, totalWidth]);
+  }, [isVisible, nodeKey, editor, totalWidth, panelOpen]);
+
+  // 패널 마운트 후 실제 높이로 위치 재계산
+  useEffect(() => {
+    if (!panelOpen || !panelRef.current || !btnPosRef.current) return;
+    const actualHeight = panelRef.current.offsetHeight;
+    setPanelPos(calcPanelPosition(btnPosRef.current, actualHeight));
+  }, [panelOpen]);
+
+  // 스크롤 시 패널 닫기
+  useEffect(() => {
+    if (!panelOpen) return;
+    function handleScroll() {
+      setPanelOpen(false);
+    }
+    window.addEventListener("scroll", handleScroll, { capture: true, passive: true });
+    return () => window.removeEventListener("scroll", handleScroll, { capture: true });
+  }, [panelOpen]);
 
   useEffect(() => {
     if (!panelOpen) setActiveIndex(0);
@@ -152,11 +190,9 @@ export function InlineAddButton({
 
   const btnBase = "flex items-center justify-center rounded transition-colors duration-100";
 
-  // 패널은 + 버튼 왼쪽 기준 (drag handle이 있으면 그만큼 오른쪽으로)
-  const panelFixedLeft = pos
-    ? pos.left + (showDragHandle ? BUTTON_SIZE + 2 : 0)
-    : -9999;
-  const panelFixedTop = pos ? pos.top + BUTTON_SIZE + 4 : -9999;
+  const panelFixedLeft = panelPos ? panelPos.left : -9999;
+  const panelFixedTop = panelPos ? panelPos.top : -9999;
+  const openUpward = panelPos?.openUpward ?? false;
 
   return createPortal(
     <>
@@ -165,6 +201,7 @@ export function InlineAddButton({
         {isVisible && pos !== null && (
           <motion.div
             key={nodeKey ?? "buttons"}
+            data-block-toolbar
             style={{
               position: "fixed",
               top: pos.top,
@@ -181,55 +218,55 @@ export function InlineAddButton({
             exit={{ opacity: 0 }}
             transition={{ duration: 0.08, ease: "easeOut" }}
           >
-            {showDragHandle && (
-              <button
-                type="button"
-                aria-label="Drag to reorder"
-                style={{ width: BUTTON_SIZE, height: BUTTON_SIZE }}
-                className={`${btnBase} text-zinc-500 hover:bg-zinc-700/80 hover:text-zinc-300 cursor-grab active:cursor-grabbing`}
-              >
-                <GripVertical size={13} strokeWidth={2} />
-              </button>
-            )}
-            {showAddButton && (
-              <button
-                type="button"
-                aria-label="Add block"
-                aria-expanded={panelOpen}
-                style={{ width: BUTTON_SIZE, height: BUTTON_SIZE }}
-                onMouseDown={(e) => {
-                  e.preventDefault();
-                  setPanelOpen((prev) => !prev);
-                }}
-                className={[
-                  btnBase,
-                  panelOpen
-                    ? "bg-zinc-700/80 text-zinc-300"
-                    : "text-zinc-500 hover:bg-zinc-700/80 hover:text-zinc-300",
-                ].join(" ")}
-              >
-                <Plus size={12} strokeWidth={2.5} />
-              </button>
-            )}
+            <button
+              type="button"
+              aria-label="Add block"
+              aria-expanded={panelOpen}
+              style={{ width: BUTTON_SIZE, height: BUTTON_SIZE }}
+              onMouseDown={(e) => {
+                e.preventDefault();
+                setPanelOpen((prev) => {
+                  if (!prev && nodeKey) {
+                    const blockEl = editor.getElementByKey(nodeKey);
+                    if (blockEl) {
+                      const btnPos = calcFixedPos(blockEl, totalWidth);
+                      btnPosRef.current = btnPos;
+                      // 초기 위치 추정 (패널 높이 모를 때 아래로 열기)
+                      setPanelPos(calcPanelPosition(btnPos, 280));
+                    }
+                  }
+                  return !prev;
+                });
+              }}
+              className={[
+                btnBase,
+                panelOpen
+                  ? "bg-zinc-700/80 text-zinc-300"
+                  : "text-zinc-500 hover:bg-zinc-700/80 hover:text-zinc-300",
+              ].join(" ")}
+            >
+              <Plus size={12} strokeWidth={2.5} />
+            </button>
           </motion.div>
         )}
       </AnimatePresence>
 
       {/* 패널 */}
       <AnimatePresence>
-        {isVisible && panelOpen && pos !== null && (
+        {isVisible && panelOpen && panelPos !== null && (
           <motion.div
             ref={panelRef}
+            data-block-toolbar
             style={{
               position: "fixed",
               top: panelFixedTop,
               left: panelFixedLeft,
               zIndex: 50,
-              width: 240,
+              width: PANEL_WIDTH,
             }}
-            initial={{ opacity: 0, y: -4 }}
+            initial={{ opacity: 0, y: openUpward ? 4 : -4 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -4 }}
+            exit={{ opacity: 0, y: openUpward ? 4 : -4 }}
             transition={{ duration: 0.1, ease: "easeOut" }}
             role="dialog"
             aria-label="Insert block"

@@ -1,5 +1,6 @@
 import {
   $getNearestNodeFromDOMNode,
+  $isDecoratorNode,
   $isElementNode,
 } from 'lexical'
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
@@ -15,46 +16,40 @@ export interface BlockRect {
 }
 
 export interface BlockHoverState {
-  /** Whether a block is currently hovered */
   isActive: boolean
-  /** Bounding rect of the hovered block element, relative to the page */
   rect: BlockRect | null
-  /** Lexical NodeKey of the hovered block */
   nodeKey: string | null
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-/**
- * Walks up the DOM from `target` until it finds the nearest element that
- * Lexical recognises as a top-level block element node.
- * Returns null when the target is outside the editor root.
- */
 function findBlockElement(
   target: EventTarget | null,
   editorRoot: HTMLElement,
 ): HTMLElement | null {
   if (!(target instanceof HTMLElement)) return null
-
   let node: HTMLElement | null = target
-
   while (node && node !== editorRoot) {
     if (node.parentElement === editorRoot) return node
     node = node.parentElement
   }
-
   return null
 }
 
 function buildBlockRect(el: HTMLElement): BlockRect {
   const rect = el.getBoundingClientRect()
-
   return {
     top: rect.top + window.scrollY,
     left: rect.left + window.scrollX,
     width: rect.width,
     height: rect.height,
   }
+}
+
+/** 현재 포인터 좌표(clientX/Y)가 [data-block-toolbar] 위에 있는지 확인 */
+function pointerOverToolbar(x: number, y: number): boolean {
+  const els = document.elementsFromPoint(x, y)
+  return els.some((el) => el.closest('[data-block-toolbar]') !== null)
 }
 
 // ─── Hook ─────────────────────────────────────────────────────────────────────
@@ -67,101 +62,85 @@ export function useBlockHoverPlugin(): BlockHoverState {
     nodeKey: null,
   })
 
-  // Keep a stable ref to the current nodeKey so the mouseleave handler can
-  // compare without needing to be recreated on every state change.
   const activeKeyRef = useRef<string | null>(null)
+  // 마지막으로 알려진 포인터 좌표
+  const pointerRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 })
+  // 드래그 중 여부 추적
+  const isDraggingRef = useRef(false)
 
   useEffect(() => {
+    // 전역 포인터 위치 추적
+    function trackPointer(e: MouseEvent) {
+      pointerRef.current = { x: e.clientX, y: e.clientY }
+    }
+    document.addEventListener('mousemove', trackPointer, { passive: true })
+
+    // 드래그 중에는 hover 비활성화 방지
+    function onDragStart() { isDraggingRef.current = true }
+    function onDragEnd() { isDraggingRef.current = false }
+    document.addEventListener('dragstart', onDragStart)
+    document.addEventListener('dragend', onDragEnd)
+
     let cleanup: (() => void) | null = null
 
     const unregisterRoot = editor.registerRootListener((rootElement) => {
-      // 이전 리스너 정리
       if (cleanup) {
         cleanup()
         cleanup = null
       }
+      if (!rootElement) return
 
-      if (!rootElement) {
-        console.log('[BlockHover] rootElement is null')
-        return
+      function handleMouseOver(event: MouseEvent) {
+        const blockEl = findBlockElement(event.target, rootElement!)
+        if (!blockEl) return
+
+        let nodeKey: string | null = null
+        editor.read(() => {
+          const lexicalNode = $getNearestNodeFromDOMNode(blockEl)
+          if (!lexicalNode) return
+          // ElementNode(paragraph, heading 등)와 DecoratorNode(image 등) 모두 허용
+          if (!$isElementNode(lexicalNode) && !$isDecoratorNode(lexicalNode)) return
+          // inline 노드는 제외 (block-level만)
+          if (lexicalNode.isInline()) return
+          nodeKey = lexicalNode.getKey()
+        })
+
+        if (!nodeKey || nodeKey === activeKeyRef.current) return
+
+        activeKeyRef.current = nodeKey
+        setState({ isActive: true, rect: buildBlockRect(blockEl), nodeKey })
       }
 
-      console.log('[BlockHover] rootElement attached:', rootElement)
-      const container = rootElement.parentElement ?? rootElement
-      console.log('[BlockHover] container:', container)
+      function handleMouseLeave() {
+        // 드래그 중에는 비활성화하지 않음
+        if (isDraggingRef.current) return
+        // 다음 프레임에서 실제 포인터 위치를 확인
+        requestAnimationFrame(() => {
+          if (isDraggingRef.current) return
+          const { x, y } = pointerRef.current
+          if (pointerOverToolbar(x, y)) return
+          // 에디터 안으로 다시 들어왔으면 중단
+          const el = document.elementFromPoint(x, y)
+          if (el && rootElement!.contains(el)) return
 
-      let leaveTimer: ReturnType<typeof setTimeout> | null = null
-
-      function handleDocumentMouseMove(event: MouseEvent) {
-        const target = event.target
-        const inside = container.contains(target as Node)
-        if (target instanceof HTMLElement && target.closest('[data-lexical-editor]')) {
-          console.log('[BlockHover] mousemove target:', target.tagName, 'inside container:', inside)
-        }
-
-        // Check if mouse is inside the container (editor area)
-        if (inside) {
-          // Cancel any pending leave
-          if (leaveTimer !== null) {
-            clearTimeout(leaveTimer)
-            leaveTimer = null
-          }
-
-          const blockEl = findBlockElement(target, rootElement!)
-
-          if (!blockEl) {
-            // Inside container but not over a block (e.g. padding area)
-            return
-          }
-
-          let nodeKey: string | null = null
-
-          editor.getEditorState().read(() => {
-            const lexicalNode = $getNearestNodeFromDOMNode(blockEl)
-            if (!lexicalNode) {
-              console.log('[BlockHover] $getNearestNodeFromDOMNode returned null for', blockEl)
-              return
-            }
-            if (!$isElementNode(lexicalNode)) {
-              console.log('[BlockHover] node is not element node:', lexicalNode)
-              return
-            }
-            nodeKey = lexicalNode.getKey()
-          })
-
-          if (!nodeKey) return
-          if (nodeKey === activeKeyRef.current) return
-
-          activeKeyRef.current = nodeKey
-          setState({
-            isActive: true,
-            rect: buildBlockRect(blockEl),
-            nodeKey,
-          })
-        } else {
-          // Mouse is outside the container — schedule deactivation with a delay
-          // so that moving to the floating buttons doesn't flicker
-          if (leaveTimer !== null) return
-          leaveTimer = setTimeout(() => {
-            leaveTimer = null
-            setState({ isActive: false, rect: null, nodeKey: null })
-            activeKeyRef.current = null
-          }, 150)
-        }
+          activeKeyRef.current = null
+          setState({ isActive: false, rect: null, nodeKey: null })
+        })
       }
 
-      document.addEventListener('mousemove', handleDocumentMouseMove)
+      rootElement.addEventListener('mouseover', handleMouseOver)
+      rootElement.addEventListener('mouseleave', handleMouseLeave)
 
       cleanup = () => {
-        document.removeEventListener('mousemove', handleDocumentMouseMove)
-        if (leaveTimer !== null) {
-          clearTimeout(leaveTimer)
-          leaveTimer = null
-        }
+        rootElement.removeEventListener('mouseover', handleMouseOver)
+        rootElement.removeEventListener('mouseleave', handleMouseLeave)
       }
     })
 
     return () => {
+      document.removeEventListener('mousemove', trackPointer)
+      document.removeEventListener('dragstart', onDragStart)
+      document.removeEventListener('dragend', onDragEnd)
       unregisterRoot()
       if (cleanup) cleanup()
     }
