@@ -4,9 +4,19 @@ on:
   push:
     branches:
       - main
+    paths:
+      - 'packages/**'
+      - 'apps/**'
+      - 'pnpm-lock.yaml'
+      - 'package.json'
   pull_request:
     branches:
       - main
+    paths:
+      - 'packages/**'
+      - 'apps/**'
+      - 'pnpm-lock.yaml'
+      - 'package.json'
 
 jobs:
   build:
