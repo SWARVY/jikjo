@@ -43,7 +43,7 @@ export function createImageExtension(options: ImageExtensionOptions = {}): Exten
       {
         id: 'image',
         label: 'Image',
-        description: 'Insert an image via URL or file upload',
+        description: 'Insert an image via file upload or drag and drop',
         icon: ImageIcon,
         onSelect: () => {
           // SlashMenu가 닫힌 뒤 다이얼로그를 열어야 하므로 한 프레임 지연

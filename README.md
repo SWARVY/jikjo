@@ -1,135 +1,130 @@
-# Turborepo starter
+# jikjo
 
-This Turborepo starter is maintained by the Turborepo core team.
+A headless, framework-agnostic rich text editor built on [Lexical](https://lexical.dev/). Provides a plugin-based extension system, a ready-to-use UI kit, and optional add-ons like image handling — all as independently publishable npm packages.
 
-## Using this example
+## Packages
 
-Run the following command:
+| Package | Version | Description |
+|---|---|---|
+| [`@jikjo/core`](./packages/core) | [![npm](https://img.shields.io/npm/v/@jikjo/core)](https://www.npmjs.com/package/@jikjo/core) | Headless editor core: `<Editor>`, plugin hooks, extension API |
+| [`@jikjo/ui-kit`](./packages/ui-kit) | [![npm](https://img.shields.io/npm/v/@jikjo/ui-kit)](https://www.npmjs.com/package/@jikjo/ui-kit) | Pre-built editor UI with toolbar, bubble menu, slash command, and block toolbar |
+| [`@jikjo/image`](./packages/image) | [![npm](https://img.shields.io/npm/v/@jikjo/image)](https://www.npmjs.com/package/@jikjo/image) | Image extension with file upload, drag & drop, clipboard paste, resize, and alignment |
 
-```sh
-npx create-turbo@latest
+## Features
+
+### `@jikjo/core`
+
+- **`<Editor>`** — thin wrapper around `LexicalComposer` with a declarative `extensions` prop
+- **Extension API** — compose nodes, plugins, and slash menu items into a single object
+- **Built-in hooks**
+  - `useSelectionPlugin` — tracks active text format (bold, italic, etc.)
+  - `useSlashCommandPlugin` — detects `/` trigger and manages query state
+  - `useBlockHoverPlugin` — tracks which block the cursor is hovering over
+- **Built-in extensions** — `richTextExtension`, `historyExtension`
+
+### `@jikjo/ui-kit`
+
+- **`<EditorUI>`** — full-featured editor with all UI wired up out of the box
+- **Toolbar** — bold, italic, underline, strikethrough, code, H1/H2/H3
+- **Bubble menu** — floating format toolbar on text selection
+- **Slash command menu** — `/` to open an inline command palette
+- **Block toolbar** — drag handle for reordering blocks, `+` button to insert new blocks
+- **Feature flags** — selectively enable/disable `blockHandle`, `inlineAdd`, `slashCommand`, `bubbleMenu`
+- **Customizable** — pass `toolbarContent` to replace the default toolbar, or `false` to hide it entirely
+
+### `@jikjo/image`
+
+- **File upload** — click to open file picker, with configurable `accept` and `maxFileSize`
+- **Drag & drop** — drop image files directly into the editor
+- **Clipboard paste** — paste images from clipboard
+- **Upload adapter** — bring your own upload logic via `ImageUploadAdapter`
+- **Resize** — drag handles to resize inserted images
+- **Alignment** — left / center / right alignment toolbar on selection
+- **Caption** — editable caption below each image
+
+## Quick Start
+
+```bash
+pnpm add @jikjo/core @jikjo/ui-kit
 ```
 
-## What's inside?
+```tsx
+import { EditorUI } from '@jikjo/ui-kit'
+import '@jikjo/ui-kit/styles' // if applicable
 
-This Turborepo includes the following packages/apps:
-
-### Apps and Packages
-
-- `docs`: a [Next.js](https://nextjs.org/) app
-- `web`: another [Next.js](https://nextjs.org/) app
-- `@repo/ui`: a stub React component library shared by both `web` and `docs` applications
-- `@repo/eslint-config`: `eslint` configurations (includes `eslint-config-next` and `eslint-config-prettier`)
-- `@repo/typescript-config`: `tsconfig.json`s used throughout the monorepo
-
-Each package/app is 100% [TypeScript](https://www.typescriptlang.org/).
-
-### Utilities
-
-This Turborepo has some additional tools already setup for you:
-
-- [TypeScript](https://www.typescriptlang.org/) for static type checking
-- [ESLint](https://eslint.org/) for code linting
-- [Prettier](https://prettier.io) for code formatting
-
-### Build
-
-To build all apps and packages, run the following command:
-
-```
-cd my-turborepo
-
-# With [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation) installed (recommended)
-turbo build
-
-# Without [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation), use your package manager
-npx turbo build
-yarn dlx turbo build
-pnpm exec turbo build
+export default function App() {
+  return <EditorUI />
+}
 ```
 
-You can build a specific package by using a [filter](https://turborepo.com/docs/crafting-your-repository/running-tasks#using-filters):
+### With image support
 
-```
-# With [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation) installed (recommended)
-turbo build --filter=docs
-
-# Without [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation), use your package manager
-npx turbo build --filter=docs
-yarn exec turbo build --filter=docs
-pnpm exec turbo build --filter=docs
+```bash
+pnpm add @jikjo/image
 ```
 
-### Develop
+```tsx
+import { EditorUI } from '@jikjo/ui-kit'
+import { createImageExtension } from '@jikjo/image'
 
-To develop all apps and packages, run the following command:
+const imageExtension = createImageExtension({
+  uploadAdapter: {
+    upload: async (file) => {
+      const form = new FormData()
+      form.append('file', file)
+      const res = await fetch('/api/upload', { method: 'POST', body: form })
+      const { url } = await res.json()
+      return url
+    },
+  },
+})
 
-```
-cd my-turborepo
-
-# With [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation) installed (recommended)
-turbo dev
-
-# Without [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation), use your package manager
-npx turbo dev
-yarn exec turbo dev
-pnpm exec turbo dev
-```
-
-You can develop a specific package by using a [filter](https://turborepo.com/docs/crafting-your-repository/running-tasks#using-filters):
-
-```
-# With [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation) installed (recommended)
-turbo dev --filter=web
-
-# Without [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation), use your package manager
-npx turbo dev --filter=web
-yarn exec turbo dev --filter=web
-pnpm exec turbo dev --filter=web
+export default function App() {
+  return <EditorUI extensions={[imageExtension]} />
+}
 ```
 
-### Remote Caching
+### Headless usage
 
-> [!TIP]
-> Vercel Remote Cache is free for all plans. Get started today at [vercel.com](https://vercel.com/signup?/signup?utm_source=remote-cache-sdk&utm_campaign=free_remote_cache).
+```tsx
+import { Editor, richTextExtension, historyExtension } from '@jikjo/core'
 
-Turborepo can use a technique known as [Remote Caching](https://turborepo.com/docs/core-concepts/remote-caching) to share cache artifacts across machines, enabling you to share build caches with your team and CI/CD pipelines.
-
-By default, Turborepo will cache locally. To enable Remote Caching you will need an account with Vercel. If you don't have an account you can [create one](https://vercel.com/signup?utm_source=turborepo-examples), then enter the following commands:
-
-```
-cd my-turborepo
-
-# With [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation) installed (recommended)
-turbo login
-
-# Without [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation), use your package manager
-npx turbo login
-yarn exec turbo login
-pnpm exec turbo login
+export default function App() {
+  return (
+    <Editor extensions={[richTextExtension, historyExtension]}>
+      {/* your custom UI here */}
+    </Editor>
+  )
+}
 ```
 
-This will authenticate the Turborepo CLI with your [Vercel account](https://vercel.com/docs/concepts/personal-accounts/overview).
+## Development
 
-Next, you can link your Turborepo to your Remote Cache by running the following command from the root of your Turborepo:
-
-```
-# With [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation) installed (recommended)
-turbo link
-
-# Without [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation), use your package manager
-npx turbo link
-yarn exec turbo link
-pnpm exec turbo link
+```bash
+pnpm install
+pnpm dev           # start all packages in watch mode
+pnpm build         # build all packages
+pnpm check-types   # typecheck all packages
 ```
 
-## Useful Links
+To run the playground:
 
-Learn more about the power of Turborepo:
+```bash
+pnpm --filter @jikjo/playground dev
+```
 
-- [Tasks](https://turborepo.com/docs/crafting-your-repository/running-tasks)
-- [Caching](https://turborepo.com/docs/crafting-your-repository/caching)
-- [Remote Caching](https://turborepo.com/docs/core-concepts/remote-caching)
-- [Filtering](https://turborepo.com/docs/crafting-your-repository/running-tasks#using-filters)
-- [Configuration Options](https://turborepo.com/docs/reference/configuration)
-- [CLI Usage](https://turborepo.com/docs/reference/command-line-reference)
+## Publishing
+
+This repo uses [Changesets](https://github.com/changesets/changesets) for versioning and publishing.
+
+```bash
+pnpm changeset        # describe your changes
+pnpm changeset version # bump versions and update changelogs
+pnpm release          # publish to npm
+```
+
+Releases are automated via GitHub Actions on push to `main`.
+
+## License
+
+MIT
