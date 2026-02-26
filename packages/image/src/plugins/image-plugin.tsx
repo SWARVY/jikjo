@@ -5,6 +5,7 @@ import {
   $getSelection,
   $insertNodes,
   $isRangeSelection,
+  $isRootOrShadowRoot,
   COMMAND_PRIORITY_EDITOR,
   COMMAND_PRIORITY_LOW,
   DRAGOVER_COMMAND,
