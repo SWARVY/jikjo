@@ -4,6 +4,12 @@ on:
   push:
     branches:
       - main
+    paths:
+      - 'packages/**'
+      - 'apps/**'
+      - '.changeset/**'
+      - 'pnpm-lock.yaml'
+      - 'package.json'
 
 concurrency: ${{ github.workflow }}-${{ github.ref }}
 
