@@ -1,5 +1,11 @@
 # @jikjo/ui-kit
 
+## 0.4.0
+
+### Minor Changes
+
+- ece6037: Expose bubble menu button hover and active colors as CSS custom properties (`--jikjo-btn-bg-active`, `--jikjo-btn-text-active`), making the full bubble menu appearance themeable via CSS variables.
+
 ## 0.3.0
 
 ### Minor Changes
