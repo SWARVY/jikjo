@@ -1,4 +1,5 @@
 import { defineConfig } from 'tsdown'
+import LightningCSS from 'unplugin-lightningcss/rolldown'
 
 export default defineConfig({
   entry: ['./src/index.ts'],
@@ -17,4 +18,7 @@ export default defineConfig({
     'lucide-react',
   ],
   outDir: 'dist',
+  plugins: [
+    LightningCSS(),
+  ],
 })

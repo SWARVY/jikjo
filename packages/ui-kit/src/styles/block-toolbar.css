@@ -1,0 +1,56 @@
+.jikjo-block-toolbar__btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  border: none;
+  background: transparent;
+  color: var(--jikjo-btn-text);
+  cursor: pointer;
+  padding: 0;
+  transition: background 80ms, color 80ms;
+}
+
+.jikjo-block-toolbar__btn:hover,
+.jikjo-block-toolbar__btn--hovered {
+  background: var(--jikjo-btn-bg-hover);
+  color: var(--jikjo-btn-text-hover);
+}
+
+.jikjo-block-toolbar__cursor-indicator {
+  position: absolute;
+  left: 0;
+  width: 2px;
+  border-radius: 1px;
+  background: var(--jikjo-accent);
+  pointer-events: none;
+  z-index: 2;
+}
+
+.jikjo-block-toolbar__drop-line {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 2px;
+  pointer-events: none;
+  display: flex;
+  align-items: center;
+  transform: translateY(-1px);
+  z-index: 3;
+}
+
+.jikjo-block-toolbar__drop-line-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--jikjo-accent);
+  flex-shrink: 0;
+  margin-left: 4px;
+}
+
+.jikjo-block-toolbar__drop-line-bar {
+  flex: 1;
+  height: 2px;
+  background: var(--jikjo-accent);
+  margin-right: 8px;
+}

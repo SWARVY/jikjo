@@ -24,8 +24,11 @@ import {
   Text,
 } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
-import { useCallback, useEffect, useRef, useState, type CSSProperties } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import "../styles/variables.css";
+import "../styles/block-toolbar.css";
+import "../styles/menu-panel.css";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -55,23 +58,6 @@ const TOOLBAR_WIDTH = GUTTER_LEFT + 2 * BTN + GAP; // 58px
 
 // ─── Inline styles ────────────────────────────────────────────────────────────
 
-const btnBase: CSSProperties = {
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  borderRadius: 4,
-  border: "none",
-  background: "transparent",
-  color: "#a1a1aa",
-  cursor: "pointer",
-  padding: 0,
-  transition: "background 80ms, color 80ms",
-};
-
-const btnHover: CSSProperties = {
-  background: "rgba(63,63,70,0.7)",
-  color: "#e4e4e7",
-};
 
 // ─── Icon map ─────────────────────────────────────────────────────────────────
 
@@ -359,20 +345,6 @@ export function BlockToolbar({
 
   if (!container) return null;
 
-  const dragBtnStyle: CSSProperties = {
-    ...btnBase,
-    width: BTN,
-    height: BTN,
-    cursor: "grab",
-    ...(dragHovered ? btnHover : {}),
-  };
-
-  const addBtnStyle: CSSProperties = {
-    ...btnBase,
-    width: BTN,
-    height: BTN,
-    ...(panelOpen || addHovered ? btnHover : {}),
-  };
 
   return (
     <>
@@ -382,17 +354,8 @@ export function BlockToolbar({
           {focusedTop !== null && (
             <motion.div
               key={focusedNodeKey ?? "cursor-indicator"}
-              style={{
-                position: "absolute",
-                top: focusedTop,
-                left: 0,
-                width: 2,
-                height: focusedHeight,
-                background: "#818cf8", // indigo-400
-                borderRadius: 1,
-                zIndex: 2,
-                pointerEvents: "none",
-              }}
+              className="jikjo-block-toolbar__cursor-indicator"
+              style={{ top: focusedTop, height: focusedHeight }}
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
@@ -432,7 +395,8 @@ export function BlockToolbar({
                   data-drag-handle
                   onDragStart={handleDragStart}
                   aria-label="Drag to reorder"
-                  style={dragBtnStyle}
+                  className={`jikjo-block-toolbar__btn${dragHovered ? " jikjo-block-toolbar__btn--hovered" : ""}`}
+                  style={{ width: BTN, height: BTN, cursor: "grab" }}
                   onMouseEnter={() => setDragHovered(true)}
                   onMouseLeave={() => setDragHovered(false)}
                 >
@@ -445,7 +409,8 @@ export function BlockToolbar({
                   type="button"
                   aria-label="Add block"
                   aria-expanded={panelOpen}
-                  style={addBtnStyle}
+                  className={`jikjo-block-toolbar__btn${panelOpen || addHovered ? " jikjo-block-toolbar__btn--hovered" : ""}`}
+                  style={{ width: BTN, height: BTN }}
                   onMouseDown={handleAddClick}
                   onMouseEnter={() => setAddHovered(true)}
                   onMouseLeave={() => setAddHovered(false)}
@@ -465,42 +430,15 @@ export function BlockToolbar({
           {dropLine !== null && (
             <motion.div
               key="drop-line"
-              style={{
-                position: "absolute",
-                top: dropLine.top,
-                // 텍스트 시작점(padding-left)에 맞춰 왼쪽 여백
-                left: 0,
-                right: 0,
-                height: 2,
-                zIndex: 3,
-                pointerEvents: "none",
-                // 가이드 라인: 파란 선 + 양쪽 원형 핸들
-                display: "flex",
-                alignItems: "center",
-                // translateY로 선을 블록 경계에 정확히 정렬
-                transform: "translateY(-1px)",
-              }}
+              className="jikjo-block-toolbar__drop-line"
+              style={{ top: dropLine.top }}
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.06 }}
             >
-              {/* 왼쪽 원 */}
-              <div style={{
-                width: 6,
-                height: 6,
-                borderRadius: "50%",
-                background: "#818cf8", // indigo-400
-                flexShrink: 0,
-                marginLeft: 4,
-              }} />
-              {/* 가로선 */}
-              <div style={{
-                flex: 1,
-                height: 2,
-                background: "#818cf8",
-                marginRight: 8,
-              }} />
+              <div className="jikjo-block-toolbar__drop-line-dot" />
+              <div className="jikjo-block-toolbar__drop-line-bar" />
             </motion.div>
           )}
         </AnimatePresence>,
@@ -527,9 +465,9 @@ export function BlockToolbar({
               transition={{ duration: 0.1, ease: "easeOut" }}
               role="dialog"
               aria-label="Insert block"
-              className="rounded-lg bg-zinc-800 shadow-xl shadow-black/50 py-1.5"
+              className="jikjo-menu-panel"
             >
-              <div role="listbox" aria-label="Block type" className="w-full px-1.5 flex flex-col">
+              <div role="listbox" aria-label="Block type" className="jikjo-menu-panel__list">
                 {items.map((item, index) => {
                   const icon = ICON_MAP[item.id] ?? item.icon;
                   const isActive = index === activeIndex;
@@ -544,18 +482,10 @@ export function BlockToolbar({
                         editor.focus(() => { item.onSelect(editor); setPanelOpen(false); });
                       }}
                       onMouseEnter={() => setActiveIndex(index)}
-                      className={[
-                        "w-full flex items-center gap-3 px-3 py-2 rounded-md text-left transition-colors duration-75",
-                        "outline-none",
-                        isActive
-                          ? "bg-zinc-700/60 text-zinc-100"
-                          : "text-zinc-400 hover:bg-zinc-700/40 hover:text-zinc-200",
-                      ].join(" ")}
+                      className={`jikjo-menu-panel__item${isActive ? " jikjo-menu-panel__item--active" : ""}`}
                     >
-                      <span className="flex items-center justify-center shrink-0 w-4 text-current">
-                        {icon}
-                      </span>
-                      <span className="text-sm font-normal leading-none">{item.label}</span>
+                      <span className="jikjo-menu-panel__item-icon">{icon}</span>
+                      <span className="jikjo-menu-panel__item-label">{item.label}</span>
                     </button>
                   );
                 })}

@@ -25,13 +25,13 @@
         "default": "./dist/index.cjs"
       }
     },
-    "./styles.css": "./dist/styles.css"
+    "./styles.css": "./dist/index.css"
   },
   "files": [
     "dist"
   ],
   "scripts": {
-    "build": "tsdown && node_modules/.bin/tailwindcss -i ./src/styles.css -o ./dist/styles.css --minify",
+    "build": "tsdown",
     "dev": "tsdown --watch",
     "check-types": "tsc --noEmit"
   },
@@ -55,15 +55,14 @@
     "@jikjo/typescript-config": "workspace:*",
     "@lexical/react": "^0.38.2",
     "@lexical/rich-text": "^0.38.2",
-    "@tailwindcss/cli": "^4.2.1",
     "@types/react": "^19.1.8",
     "@types/react-dom": "^19.1.6",
     "lexical": "^0.38.2",
     "motion": "^11.18.2",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
-    "tailwindcss": "^4.2.0",
     "tsdown": "^0.12.7",
-    "typescript": "5.9.2"
+    "typescript": "5.9.2",
+    "unplugin-lightningcss": "^0.4.5"
   }
 }

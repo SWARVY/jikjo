@@ -7,6 +7,8 @@ import { AnimatePresence, motion } from "motion/react";
 import type { ReactNode } from "react";
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import "../styles/variables.css";
+import "../styles/menu-panel.css";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -154,10 +156,10 @@ export function SlashMenu({
           transition={{ duration: 0.1, ease: "easeOut" }}
           role="dialog"
           aria-label="Insert block"
-          className="rounded-lg bg-zinc-800 shadow-xl shadow-black/50 py-1.5 overflow-hidden"
+          className="jikjo-menu-panel"
         >
           {filtered.length === 0 ? (
-            <p className="px-4 py-2 text-xs text-zinc-500">
+            <p className="jikjo-menu-panel__empty">
               No results for &ldquo;{query}&rdquo;
             </p>
           ) : (
@@ -165,7 +167,7 @@ export function SlashMenu({
               ref={containerRef}
               role="listbox"
               aria-label="Block type"
-              className="w-full max-h-72 overflow-y-auto px-1.5 flex flex-col"
+              className="jikjo-menu-panel__list jikjo-menu-panel__list--scrollable"
             >
               {filtered.map((item, index) => {
                 const icon = ICON_MAP[item.id] ?? item.icon;
@@ -185,18 +187,12 @@ export function SlashMenu({
                       });
                     }}
                     onMouseEnter={() => setActiveIndex(index)}
-                    className={[
-                      "w-full flex items-center gap-3 px-3 py-2 rounded-md text-left transition-colors duration-75",
-                      "outline-none focus-visible:outline-none",
-                      isActive
-                        ? "bg-zinc-700/80 text-zinc-100"
-                        : "text-zinc-400 hover:bg-zinc-700/60 hover:text-zinc-200 focus-visible:bg-zinc-700/80 focus-visible:text-zinc-100",
-                    ].join(" ")}
+                    className={`jikjo-menu-panel__item${isActive ? " jikjo-menu-panel__item--active" : ""}`}
                   >
-                    <span className="flex items-center justify-center shrink-0 w-4 text-current">
+                    <span className="jikjo-menu-panel__item-icon">
                       {icon}
                     </span>
-                    <span className="text-sm font-normal leading-none">
+                    <span className="jikjo-menu-panel__item-label">
                       {item.label}
                     </span>
                   </button>

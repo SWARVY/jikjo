@@ -1,0 +1,44 @@
+.jikjo-bubble-menu {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 6px;
+  border-radius: 8px;
+  background: var(--jikjo-menu-bg);
+  box-shadow:
+    0 20px 25px -5px var(--jikjo-menu-shadow),
+    0 8px 10px -6px var(--jikjo-menu-shadow);
+}
+
+.jikjo-bubble-menu__divider {
+  width: 1px;
+  height: 16px;
+  background: var(--jikjo-menu-divider);
+  margin: 0 2px;
+  flex-shrink: 0;
+}
+
+.jikjo-bubble-menu__btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+  transition: background 75ms, color 75ms;
+  background: transparent;
+  color: var(--jikjo-menu-item-text);
+}
+
+.jikjo-bubble-menu__btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--jikjo-btn-text-hover);
+}
+
+.jikjo-bubble-menu__btn[aria-pressed="true"],
+.jikjo-bubble-menu__btn--active {
+  background: rgba(255, 255, 255, 0.15);
+  color: white;
+}
