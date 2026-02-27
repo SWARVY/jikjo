@@ -2,7 +2,7 @@
   "name": "@jikjo/ui-kit",
   "version": "0.2.1",
   "type": "module",
-  "description": "Styled editor UI components for jikjo",
+  "description": "Pre-built editor UI components for jikjo with self-contained CSS and theming via CSS custom properties",
   "keywords": [
     "editor",
     "ui",
@@ -38,7 +38,6 @@
   "dependencies": {
     "@jikjo/core": "workspace:*",
     "lucide-react": "^0.575.0",
-    "tailwind-merge": "^3.5.0",
     "tailwind-variants": "^3.2.2"
   },
   "peerDependencies": {
