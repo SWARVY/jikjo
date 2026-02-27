@@ -15,6 +15,14 @@ import { LexicalErrorBoundary } from '@lexical/react/LexicalErrorBoundary'
 import { RichTextPlugin } from '@lexical/react/LexicalRichTextPlugin'
 import { createElement } from 'react'
 import type { Extension, SlashMenuItem } from '../types'
+import { useShiftEnterPlugin } from '../plugins/shift-enter-plugin'
+
+// ─── ShiftEnterPlugin component ───────────────────────────────────────────────
+
+function ShiftEnterPlugin() {
+  useShiftEnterPlugin()
+  return null
+}
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -79,6 +87,7 @@ export const richTextExtension: Extension = {
   name: 'rich-text',
   nodes: [HeadingNode, QuoteNode],
   plugins: [
+    createElement(ShiftEnterPlugin),
     createElement(RichTextPlugin, {
       contentEditable: createElement(
         'div',
