@@ -9,4 +9,6 @@
   --jikjo-btn-text: #a1a1aa;
   --jikjo-btn-bg-hover: rgba(63, 63, 70, 0.7);
   --jikjo-btn-text-hover: #e4e4e7;
+  --jikjo-btn-bg-active: rgba(255, 255, 255, 0.15);
+  --jikjo-btn-text-active: #ffffff;
 }

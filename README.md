@@ -103,6 +103,8 @@ export default function App() {
   --jikjo-btn-text: #71717a;             /* toolbar button icon color */
   --jikjo-btn-bg-hover: #f4f4f5;         /* toolbar button hover background */
   --jikjo-btn-text-hover: #18181b;       /* toolbar button hover icon color */
+  --jikjo-btn-bg-active: #e4e4e7;        /* bubble menu button active background */
+  --jikjo-btn-text-active: #18181b;      /* bubble menu button active icon color */
 }
 ```
 
@@ -121,6 +123,8 @@ You can scope overrides to a container or use `@media (prefers-color-scheme)` fo
     --jikjo-btn-text: #71717a;
     --jikjo-btn-bg-hover: #f4f4f5;
     --jikjo-btn-text-hover: #18181b;
+    --jikjo-btn-bg-active: #e4e4e7;
+    --jikjo-btn-text-active: #18181b;
   }
 }
 ```

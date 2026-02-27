@@ -33,12 +33,12 @@
 }
 
 .jikjo-bubble-menu__btn:hover {
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--jikjo-btn-bg-hover);
   color: var(--jikjo-btn-text-hover);
 }
 
 .jikjo-bubble-menu__btn[aria-pressed="true"],
 .jikjo-bubble-menu__btn--active {
-  background: rgba(255, 255, 255, 0.15);
-  color: white;
+  background: var(--jikjo-btn-bg-active);
+  color: var(--jikjo-btn-text-active);
 }
