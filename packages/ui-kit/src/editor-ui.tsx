@@ -390,7 +390,19 @@ export function EditorUI({
 }: EditorUIProps) {
   const hasBlockToolbar = features.includes("blockHandle") || features.includes("inlineAdd");
   return (
-    <div className={className} {...(hasBlockToolbar ? { "data-has-block-toolbar": "" } : {})}>
+    <div
+      className={className}
+      {...(hasBlockToolbar ? { "data-has-block-toolbar": "" } : {})}
+      // block toolbar가 있을 때만 좌측 74px padding을 주입
+      // (GUTTER_LEFT 6 + 2×BTN 48 + GAP 4 = 58px toolbar + 16px text padding)
+      style={hasBlockToolbar ? ({
+        "--jikjo-content-pl": "74px",
+        "--jikjo-placeholder-pl": "74px",
+      } as React.CSSProperties) : ({
+        "--jikjo-content-pl": "16px",
+        "--jikjo-placeholder-pl": "16px",
+      } as React.CSSProperties)}
+    >
       <Editor extensions={extensions} namespace={namespace}>
         <EditorInner
           extensions={extensions}

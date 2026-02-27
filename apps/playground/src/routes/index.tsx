@@ -121,7 +121,7 @@ const notionExtensions: Extension[] = [...defaultExtensions, imageExtension];
 function NotionLikePreview() {
   return (
     <div className="rounded-xl border border-zinc-800 bg-zinc-900/60 shadow-2xl shadow-black/40">
-      <EditorUI className="flex flex-col rounded-xl" extensions={notionExtensions} />
+      <EditorUI className="flex flex-col rounded-xl min-h-[480px]" extensions={notionExtensions} />
     </div>
   );
 }
@@ -131,7 +131,7 @@ function SimplePreview() {
   return (
     <div className="rounded-xl border border-zinc-800 bg-zinc-900/60 shadow-2xl shadow-black/40">
       <EditorUI
-        className="flex flex-col rounded-xl"
+        className="flex flex-col rounded-xl min-h-[480px]"
         features={["bubbleMenu"]}
       />
     </div>
@@ -174,7 +174,7 @@ function HeadlessPreview() {
 
   return (
     <div className="rounded-xl overflow-hidden border border-zinc-800 bg-zinc-900/60 shadow-2xl shadow-black/40">
-      <div className="grid grid-cols-2 divide-x divide-zinc-800 min-h-[320px]">
+      <div className="grid grid-cols-2 divide-x divide-zinc-800 min-h-[480px]">
         <div className="flex flex-col">
           <div className="px-4 py-2.5 border-b border-zinc-800 flex items-center gap-2">
             <span className="w-1.5 h-1.5 rounded-full bg-zinc-700" />
@@ -239,7 +239,7 @@ function EditorSwitcher() {
 
   return (
     <section id="demo" className="px-6 pb-24">
-      <div className="mx-auto max-w-4xl">
+      <div className="mx-auto max-w-5xl">
         <div className="flex items-center justify-center gap-1 mb-8 p-1 bg-zinc-900 border border-zinc-800 rounded-xl w-fit mx-auto">
           {TABS.map((tab) => (
             <button

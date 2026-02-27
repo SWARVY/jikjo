@@ -15,6 +15,14 @@ import { LexicalErrorBoundary } from '@lexical/react/LexicalErrorBoundary'
 import { RichTextPlugin } from '@lexical/react/LexicalRichTextPlugin'
 import { createElement } from 'react'
 import type { Extension, SlashMenuItem } from '../types'
+import { useShiftEnterPlugin } from '../plugins/shift-enter-plugin'
+
+// ─── ShiftEnterPlugin component ───────────────────────────────────────────────
+
+function ShiftEnterPlugin() {
+  useShiftEnterPlugin()
+  return null
+}
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -79,16 +87,41 @@ export const richTextExtension: Extension = {
   name: 'rich-text',
   nodes: [HeadingNode, QuoteNode],
   plugins: [
+    createElement(ShiftEnterPlugin),
     createElement(RichTextPlugin, {
       contentEditable: createElement(
         'div',
+        // jikjo-editor-content: position relative (block-toolbar portal의 기준점)
+        // padding 없음 → blockEl.top - container.top 계산이 정확함
         { className: 'jikjo-editor-content', style: { position: 'relative' } },
         createElement(ContentEditable, {
           className: 'jikjo-content-editable',
+          // padding-left는 data-has-block-toolbar 유무에 따라 EditorUI wrapper의
+          // CSS로 제어됨. inline style에서는 block-toolbar 여백 없이 16px로 둠.
+          // position relative → placeholder의 absolute 기준점이 이 div가 됨
+          style: { outline: 'none', minHeight: '1em', paddingTop: '12px', paddingRight: '16px', paddingBottom: '12px', paddingLeft: 'var(--jikjo-content-pl, 16px)', position: 'relative' },
           'aria-placeholder': 'Type something, or press / for commands…',
           placeholder: createElement(
             'p',
-            { className: 'jikjo-placeholder' },
+            {
+              className: 'jikjo-placeholder',
+              style: {
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                paddingTop: '12px',
+                paddingRight: '16px',
+                paddingBottom: '12px',
+                paddingLeft: 'var(--jikjo-placeholder-pl, 16px)',
+                pointerEvents: 'none',
+                userSelect: 'none',
+                color: '#a1a1aa',
+                margin: 0,
+                boxSizing: 'border-box',
+              },
+            },
             'Type something, or press / for commands…',
           ),
         }),

@@ -50,6 +50,8 @@ const DRAG_DATA_FORMAT = "application/x-lexical-drag-block";
 const BTN = 24;
 const GAP = 4;
 const GUTTER_LEFT = 6;
+// 버튼 그룹 전체 너비 (drag + add 기준): GUTTER_LEFT + 2*BTN + GAP
+const TOOLBAR_WIDTH = GUTTER_LEFT + 2 * BTN + GAP; // 58px
 
 // ─── Inline styles ────────────────────────────────────────────────────────────
 
