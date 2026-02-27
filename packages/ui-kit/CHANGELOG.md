@@ -1,5 +1,11 @@
 # @jikjo/ui-kit
 
+## 0.2.1
+
+### Patch Changes
+
+- bed37cf: Add styles.css export for Tailwind CSS bundle
+
 ## 0.2.0
 
 ### Minor Changes
