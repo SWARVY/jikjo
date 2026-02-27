@@ -57,7 +57,7 @@ export default function App() {
 }
 ```
 
-> `@jikjo/ui-kit/styles.css` imports Tailwind CSS and all UI kit component styles. This must be imported once at your app's entry point (e.g. `main.tsx`, `layout.tsx`, or a global CSS file).
+> `@jikjo/ui-kit/styles.css` contains all UI kit component styles. Import it once at your app's entry point (e.g. `main.tsx`, `layout.tsx`, or a global CSS file). No Tailwind CSS setup is required.
 
 ### With image support
 
@@ -83,6 +83,45 @@ const imageExtension = createImageExtension({
 
 export default function App() {
   return <EditorUI extensions={[imageExtension]} />
+}
+```
+
+### Theming
+
+`@jikjo/ui-kit` ships with a dark theme by default, defined via CSS custom properties. Override these variables to apply your own theme:
+
+```css
+/* your global CSS file */
+:root {
+  --jikjo-menu-bg: #ffffff;               /* floating menu background */
+  --jikjo-menu-shadow: rgba(0, 0, 0, 0.15); /* floating menu shadow */
+  --jikjo-menu-item-text: #52525b;        /* menu item default text */
+  --jikjo-menu-item-text-active: #18181b; /* menu item highlighted text */
+  --jikjo-menu-item-bg-active: #f4f4f5;   /* menu item highlighted background */
+  --jikjo-menu-divider: #e4e4e7;          /* divider between menu sections */
+  --jikjo-accent: #6366f1;               /* accent color (cursor indicator, drop line) */
+  --jikjo-btn-text: #71717a;             /* toolbar button icon color */
+  --jikjo-btn-bg-hover: #f4f4f5;         /* toolbar button hover background */
+  --jikjo-btn-text-hover: #18181b;       /* toolbar button hover icon color */
+}
+```
+
+You can scope overrides to a container or use `@media (prefers-color-scheme)` for automatic light/dark switching:
+
+```css
+@media (prefers-color-scheme: light) {
+  :root {
+    --jikjo-menu-bg: #ffffff;
+    --jikjo-menu-shadow: rgba(0, 0, 0, 0.1);
+    --jikjo-menu-item-text: #52525b;
+    --jikjo-menu-item-text-active: #18181b;
+    --jikjo-menu-item-bg-active: #f4f4f5;
+    --jikjo-menu-divider: #e4e4e7;
+    --jikjo-accent: #6366f1;
+    --jikjo-btn-text: #71717a;
+    --jikjo-btn-bg-hover: #f4f4f5;
+    --jikjo-btn-text-hover: #18181b;
+  }
 }
 ```
 

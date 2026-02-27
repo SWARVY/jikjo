@@ -6,6 +6,8 @@ import { Bold, Code, Italic, Strikethrough, Underline } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
+import "../styles/variables.css";
+import "../styles/bubble-menu.css";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -64,13 +66,7 @@ function Btn({
       type="button"
       aria-label={label}
       onMouseDown={onMouseDown}
-      className={[
-        "flex items-center justify-center w-8 h-8 rounded-md",
-        "transition-colors duration-75",
-        active
-          ? "bg-white/15 text-white"
-          : "text-zinc-400 hover:bg-white/10 hover:text-zinc-200",
-      ].join(" ")}
+      className={`jikjo-bubble-menu__btn${active ? " jikjo-bubble-menu__btn--active" : ""}`}
     >
       {children}
     </button>
@@ -129,7 +125,7 @@ export function BubbleMenu({
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: 6 }}
           transition={{ duration: 0.1, ease: "easeOut" }}
-          className="flex items-center gap-0.5 px-1.5 py-1.5 rounded-lg bg-zinc-800 shadow-xl shadow-black/50"
+          className="jikjo-bubble-menu"
         >
           <Btn
             active={format.bold}
@@ -162,7 +158,7 @@ export function BubbleMenu({
             <Underline size={13} strokeWidth={2} />
           </Btn>
 
-          <div className="w-px h-4 bg-zinc-600/50 mx-0.5 shrink-0" />
+          <div className="jikjo-bubble-menu__divider" />
 
           <Btn
             active={format.strikethrough}

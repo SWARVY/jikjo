@@ -1,0 +1,12 @@
+:root {
+  --jikjo-menu-bg: #27272a;
+  --jikjo-menu-shadow: rgba(0, 0, 0, 0.5);
+  --jikjo-menu-item-text: #a1a1aa;
+  --jikjo-menu-item-text-active: #f4f4f5;
+  --jikjo-menu-item-bg-active: rgba(63, 63, 70, 0.7);
+  --jikjo-menu-divider: rgba(82, 82, 91, 0.5);
+  --jikjo-accent: #818cf8;
+  --jikjo-btn-text: #a1a1aa;
+  --jikjo-btn-bg-hover: rgba(63, 63, 70, 0.7);
+  --jikjo-btn-text-hover: #e4e4e7;
+}

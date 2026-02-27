@@ -1,0 +1,66 @@
+/* block-toolbar panel + slash-menu 공통 */
+.jikjo-menu-panel {
+  border-radius: 8px;
+  background: var(--jikjo-menu-bg);
+  box-shadow:
+    0 20px 25px -5px var(--jikjo-menu-shadow),
+    0 8px 10px -6px var(--jikjo-menu-shadow);
+  padding: 6px 0;
+  overflow: hidden;
+}
+
+.jikjo-menu-panel__list {
+  width: 100%;
+  padding: 0 6px;
+  display: flex;
+  flex-direction: column;
+}
+
+.jikjo-menu-panel__list--scrollable {
+  max-height: 288px;
+  overflow-y: auto;
+}
+
+.jikjo-menu-panel__empty {
+  padding: 8px 16px;
+  font-size: 12px;
+  color: var(--jikjo-menu-item-text);
+  margin: 0;
+}
+
+.jikjo-menu-panel__item {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 12px;
+  border-radius: 6px;
+  text-align: left;
+  border: none;
+  cursor: pointer;
+  transition: background 75ms, color 75ms;
+  outline: none;
+  background: transparent;
+  color: var(--jikjo-menu-item-text);
+}
+
+.jikjo-menu-panel__item:hover,
+.jikjo-menu-panel__item--active {
+  background: var(--jikjo-menu-item-bg-active);
+  color: var(--jikjo-menu-item-text-active);
+}
+
+.jikjo-menu-panel__item-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 16px;
+  color: currentColor;
+}
+
+.jikjo-menu-panel__item-label {
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 1;
+}
