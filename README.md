@@ -50,12 +50,14 @@ pnpm add @jikjo/core @jikjo/ui-kit
 
 ```tsx
 import { EditorUI } from '@jikjo/ui-kit'
-import '@jikjo/ui-kit/styles' // if applicable
+import '@jikjo/ui-kit/styles.css'
 
 export default function App() {
   return <EditorUI />
 }
 ```
+
+> `@jikjo/ui-kit/styles.css` imports Tailwind CSS and all UI kit component styles. This must be imported once at your app's entry point (e.g. `main.tsx`, `layout.tsx`, or a global CSS file).
 
 ### With image support
 
