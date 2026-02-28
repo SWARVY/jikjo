@@ -1,6 +1,6 @@
 {
   "name": "@jikjo/ui-kit",
-  "version": "0.5.0",
+  "version": "0.5.1",
   "type": "module",
   "description": "Pre-built editor UI components for jikjo with self-contained CSS and theming via CSS custom properties",
   "keywords": [
