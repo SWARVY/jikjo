@@ -25,7 +25,8 @@
         "types": "./dist/index.d.cts",
         "default": "./dist/index.cjs"
       }
-    }
+    },
+    "./styles.css": "./dist/index.css"
   },
   "files": [
     "dist"
@@ -53,6 +54,7 @@
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "tsdown": "^0.12.7",
-    "typescript": "5.9.2"
+    "typescript": "5.9.2",
+    "unplugin-lightningcss": "^0.4.5"
   }
 }

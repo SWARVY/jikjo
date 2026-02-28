@@ -16,11 +16,11 @@ import {
   useEffect,
   useRef,
   useState,
-  type CSSProperties,
   type KeyboardEvent,
 } from 'react'
 import type { ImageAlignment } from '../types'
 import { $isImageNode } from '../node/image-node'
+import styles from '../styles/image-component.module.css'
 
 // ─── Props ────────────────────────────────────────────────────────────────────
 
@@ -42,22 +42,13 @@ interface ResizeHandleProps {
 }
 
 function ResizeHandle({ position, onMouseDown }: ResizeHandleProps) {
-  const style: CSSProperties = {
-    position: 'absolute',
-    top: '50%',
-    transform: 'translateY(-50%)',
-    [position]: -6,
-    width: 12,
-    height: 40,
-    background: 'rgba(255,255,255,0.85)',
-    borderRadius: 4,
-    cursor: 'ew-resize',
-    border: '1px solid rgba(0,0,0,0.15)',
-    boxShadow: '0 1px 4px rgba(0,0,0,0.2)',
-  }
+  const cls = [
+    styles.resizeHandle,
+    position === 'left' ? styles.resizeHandleLeft : styles.resizeHandleRight,
+  ].join(' ')
   return (
     <div
-      style={style}
+      className={cls}
       onMouseDown={(e) => { e.stopPropagation(); onMouseDown(e, position) }}
     />
   )
@@ -77,40 +68,13 @@ interface AlignToolbarProps {
 }
 
 function AlignToolbar({ current, onChange }: AlignToolbarProps) {
-  const style: CSSProperties = {
-    position: 'absolute',
-    top: -36,
-    left: '50%',
-    transform: 'translateX(-50%)',
-    display: 'flex',
-    gap: 2,
-    background: '#18181b',
-    border: '1px solid #3f3f46',
-    borderRadius: 6,
-    padding: '2px 4px',
-    boxShadow: '0 4px 12px rgba(0,0,0,0.4)',
-    zIndex: 10,
-  }
-  const btnStyle = (active: boolean): CSSProperties => ({
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    width: 24,
-    height: 24,
-    borderRadius: 4,
-    border: 'none',
-    cursor: 'pointer',
-    fontSize: 14,
-    background: active ? 'rgba(99,102,241,0.3)' : 'transparent',
-    color: active ? '#a5b4fc' : '#a1a1aa',
-  })
   return (
-    <div style={style}>
+    <div className={styles.alignToolbar}>
       {ALIGNMENTS.map(({ value, label }) => (
         <button
           key={value}
           type="button"
-          style={btnStyle(current === value)}
+          className={`${styles.alignBtn}${current === value ? ` ${styles.alignBtnActive}` : ''}`}
           onMouseDown={(e) => { e.preventDefault(); onChange(value) }}
         >
           {label}
@@ -124,6 +88,12 @@ function AlignToolbar({ current, onChange }: AlignToolbarProps) {
 
 const MIN_WIDTH = 80
 const MAX_WIDTH = 800
+
+const ALIGN_CLASS: Record<ImageAlignment, string> = {
+  left: styles.wrapperLeft ?? '',
+  center: styles.wrapperCenter ?? '',
+  right: styles.wrapperRight ?? '',
+}
 
 export function ImageComponent({
   nodeKey,
@@ -254,70 +224,28 @@ export function ImageComponent({
     [editor, nodeKey],
   )
 
-  // ── Styles ────────────────────────────────────────────────────────────────
-
-  const alignMap: Record<ImageAlignment, string> = {
-    left: 'flex-start',
-    center: 'center',
-    right: 'flex-end',
-  }
-
-  const wrapperStyle: CSSProperties = {
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: alignMap[alignment],
-    width: '100%',
-    margin: '8px 0',
-    userSelect: 'none',
-  }
-
-  const figureStyle: CSSProperties = {
-    position: 'relative',
-    display: 'inline-block',
-    maxWidth: '100%',
-    outline: isSelected ? '2px solid #6366f1' : '2px solid transparent',
-    outlineOffset: 2,
-    borderRadius: 4,
-    cursor: 'default',
-    transition: 'outline-color 120ms',
-  }
-
-  const imgStyle: CSSProperties = {
-    display: 'block',
-    width: currentWidth ? `${currentWidth}px` : '100%',
-    maxWidth: '100%',
-    height: 'auto',
-    borderRadius: 4,
-    pointerEvents: isResizing ? 'none' : 'auto',
-  }
-
-  const captionStyle: CSSProperties = {
-    display: 'block',
-    marginTop: 6,
-    fontSize: 13,
-    color: '#71717a',
-    textAlign: 'center',
-    width: currentWidth ? `${currentWidth}px` : '100%',
-    maxWidth: '100%',
-    background: 'transparent',
-    border: 'none',
-    outline: 'none',
-    fontFamily: 'inherit',
-    lineHeight: 1.4,
-    padding: 0,
-  }
-
   return (
-    <div style={wrapperStyle} contentEditable={false}>
-      <figure ref={containerRef} style={figureStyle}>
-        {/* 정렬 툴바 — 선택 시만 표시 */}
+    <div
+      className={`${styles.wrapper} ${ALIGN_CLASS[alignment]}`}
+      contentEditable={false}
+    >
+      <figure
+        ref={containerRef}
+        className={`${styles.figure}${isSelected ? ` ${styles.figureSelected}` : ''}`}
+      >
         {isSelected && (
           <AlignToolbar current={alignment} onChange={onAlignChange} />
         )}
 
-        <img ref={imgRef} src={src} alt={alt} style={imgStyle} draggable={false} />
+        <img
+          ref={imgRef}
+          src={src}
+          alt={alt}
+          className={`${styles.img}${isResizing ? ` ${styles.imgResizing}` : ''}`}
+          style={currentWidth ? { width: `${currentWidth}px` } : undefined}
+          draggable={false}
+        />
 
-        {/* 리사이즈 핸들 — 선택 시만 표시 */}
         {isSelected && (
           <>
             <ResizeHandle position="left" onMouseDown={startResize} />
@@ -326,14 +254,14 @@ export function ImageComponent({
         )}
       </figure>
 
-      {/* 캡션 */}
       <input
         type="text"
         value={captionText}
         onChange={(e) => setCaptionText(e.target.value)}
         onBlur={onCaptionBlur}
         placeholder="Caption (optional)"
-        style={captionStyle}
+        className={styles.caption}
+        style={currentWidth ? { width: `${currentWidth}px` } : undefined}
       />
     </div>
   )
