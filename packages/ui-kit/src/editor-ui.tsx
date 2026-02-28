@@ -32,6 +32,7 @@ import {
   Underline,
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import type { LexicalEditor } from "lexical";
 import type { MouseEvent } from "react";
 import { BubbleMenu } from "./components/bubble-menu";
 import { BlockToolbar } from "./components/block-toolbar";
@@ -78,6 +79,16 @@ export interface EditorUIProps {
    * "blockHandle" | "inlineAdd" | "slashCommand" | "bubbleMenu"
    */
   features?: Array<"blockHandle" | "inlineAdd" | "slashCommand" | "bubbleMenu">;
+  /**
+   * false → read-only viewer (toolbar and all editing UI are hidden)
+   * @default true
+   */
+  editable?: boolean;
+  /**
+   * Called once the Lexical editor instance is ready.
+   * Use this to call exportToHtml / exportToMarkdown from @jikjo/core.
+   */
+  onEditor?: (editor: LexicalEditor) => void;
 }
 
 // ─── Default extensions ───────────────────────────────────────────────────────
@@ -93,14 +104,27 @@ interface EditorInnerProps {
   extensions: Extension[];
   toolbarContent: ReactNode | false | undefined;
   features: Array<"blockHandle" | "inlineAdd" | "slashCommand" | "bubbleMenu">;
+  editable: boolean;
+  onEditor?: (editor: LexicalEditor) => void;
 }
 
 function EditorInner({
   extensions,
   toolbarContent,
   features,
+  editable,
+  onEditor,
 }: EditorInnerProps) {
   const [editor] = useLexicalComposerContext();
+
+  // editable 상태 동기화 및 onEditor 콜백 호출
+  useEffect(() => {
+    editor.setEditable(editable);
+  }, [editor, editable]);
+
+  useEffect(() => {
+    onEditor?.(editor);
+  }, [editor, onEditor]);
 
   const selection = useSelectionPlugin();
   const slashCommand = useSlashCommandPlugin();
@@ -230,10 +254,12 @@ function EditorInner({
     [editor],
   );
 
+  const activeFeatures = editable ? features : [];
+
   return (
     <>
       {/* ── Toolbar ──────────────────────────────────────────────────── */}
-      {toolbarContent === false ? null : toolbarContent !== undefined ? (
+      {!editable ? null : toolbarContent === false ? null : toolbarContent !== undefined ? (
         <div className="jikjo-toolbar">
           {toolbarContent}
         </div>
@@ -308,7 +334,7 @@ function EditorInner({
       )}
 
       {/* ── Floating overlays ────────────────────────────────────────── */}
-      {features.includes("bubbleMenu") && (
+      {activeFeatures.includes("bubbleMenu") && (
         <BubbleMenu
           isVisible={selection.isActive}
           format={selection.format}
@@ -317,7 +343,7 @@ function EditorInner({
         />
       )}
 
-      {features.includes("slashCommand") && (
+      {activeFeatures.includes("slashCommand") && (
         <SlashMenu
           isVisible={slashCommand.isActive}
           query={slashCommand.query}
@@ -329,13 +355,13 @@ function EditorInner({
 
       {/* drag handle + + 버튼 + 커서 인디케이터 */}
       <BlockToolbar
-        isVisible={blockHover.isActive && (features.includes("blockHandle") || features.includes("inlineAdd"))}
+        isVisible={blockHover.isActive && (activeFeatures.includes("blockHandle") || activeFeatures.includes("inlineAdd"))}
         nodeKey={blockHover.nodeKey}
         focusedNodeKey={focusedNodeKey}
         items={slashMenuItems}
         editor={editor}
-        showDragHandle={features.includes("blockHandle")}
-        showAddButton={features.includes("inlineAdd")}
+        showDragHandle={activeFeatures.includes("blockHandle")}
+        showAddButton={activeFeatures.includes("inlineAdd")}
         onDragStarted={handleDragStarted}
         onDropped={handleDropped}
       />
@@ -351,8 +377,11 @@ export function EditorUI({
   toolbarContent,
   className,
   features = [...ALL_FEATURES],
+  editable = true,
+  onEditor,
 }: EditorUIProps) {
-  const hasBlockToolbar = features.includes("blockHandle") || features.includes("inlineAdd");
+  const activeFeatures = editable ? features : [];
+  const hasBlockToolbar = activeFeatures.includes("blockHandle") || activeFeatures.includes("inlineAdd");
   return (
     <div
       className={className}
@@ -372,6 +401,8 @@ export function EditorUI({
           extensions={extensions}
           toolbarContent={toolbarContent}
           features={features}
+          editable={editable}
+          onEditor={onEditor}
         />
       </Editor>
     </div>
