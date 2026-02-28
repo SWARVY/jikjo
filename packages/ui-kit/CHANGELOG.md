@@ -1,5 +1,11 @@
 # @jikjo/ui-kit
 
+## 0.5.1
+
+### Patch Changes
+
+- 07a3b05: Add package-level README with full props reference, feature flag docs, and theming variable table.
+
 ## 0.5.0
 
 ### Minor Changes
