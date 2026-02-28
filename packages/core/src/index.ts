@@ -34,3 +34,6 @@ export type {
 
 export { useInlineAddPlugin } from './plugins/inline-add-plugin'
 export type { InlineAddState } from './plugins/inline-add-plugin'
+
+// Export utilities
+export { exportToHtml, exportToMarkdown } from './export'

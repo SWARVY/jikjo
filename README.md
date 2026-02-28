@@ -93,6 +93,7 @@ export default function App() {
 ```css
 /* your global CSS file */
 :root {
+  --jikjo-toolbar-border: rgba(228, 228, 231, 0.8); /* toolbar bottom border + separator */
   --jikjo-menu-bg: #ffffff;               /* floating menu background */
   --jikjo-menu-shadow: rgba(0, 0, 0, 0.15); /* floating menu shadow */
   --jikjo-menu-item-text: #52525b;        /* menu item default text */
@@ -113,6 +114,7 @@ You can scope overrides to a container or use `@media (prefers-color-scheme)` fo
 ```css
 @media (prefers-color-scheme: light) {
   :root {
+    --jikjo-toolbar-border: rgba(228, 228, 231, 0.8);
     --jikjo-menu-bg: #ffffff;
     --jikjo-menu-shadow: rgba(0, 0, 0, 0.1);
     --jikjo-menu-item-text: #52525b;

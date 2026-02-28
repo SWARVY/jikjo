@@ -1,0 +1,47 @@
+.jikjo-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 8px 16px;
+  border-bottom: 1px solid var(--jikjo-toolbar-border);
+}
+
+.jikjo-toolbar__separator {
+  width: 1px;
+  height: 16px;
+  background: var(--jikjo-toolbar-border);
+  margin: 0 4px;
+  flex-shrink: 0;
+}
+
+.jikjo-toolbar__group {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.jikjo-toolbar__btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  border: none;
+  background: transparent;
+  color: var(--jikjo-btn-text);
+  cursor: pointer;
+  padding: 0;
+  transition: background 100ms, color 100ms;
+  flex-shrink: 0;
+}
+
+.jikjo-toolbar__btn:hover {
+  background: var(--jikjo-btn-bg-hover);
+  color: var(--jikjo-btn-text-hover);
+}
+
+.jikjo-toolbar__btn--active {
+  background: var(--jikjo-btn-bg-active);
+  color: var(--jikjo-btn-text-active);
+}

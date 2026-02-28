@@ -31,39 +31,14 @@ import {
   Strikethrough,
   Underline,
 } from "lucide-react";
-import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import type { LexicalEditor } from "lexical";
 import type { MouseEvent } from "react";
 import { BubbleMenu } from "./components/bubble-menu";
 import { BlockToolbar } from "./components/block-toolbar";
 import { SlashMenu } from "./components/slash-menu";
-
-// ─── Styles ───────────────────────────────────────────────────────────────────
-
-const tbtnBase: CSSProperties = {
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  width: 32,
-  height: 32,
-  borderRadius: 6,
-  border: "none",
-  background: "transparent",
-  color: "#71717a",
-  cursor: "pointer",
-  padding: 0,
-  transition: "background 100ms, color 100ms",
-  flexShrink: 0,
-};
-
-const tbtnHover: CSSProperties = {
-  background: "rgba(39,39,42,0.9)",
-  color: "#e4e4e7",
-};
-
-const tbtnActive: CSSProperties = {
-  background: "rgba(63,63,70,0.8)",
-  color: "#f4f4f5",
-};
+import "./styles/variables.css";
+import "./styles/editor-ui.css";
 
 // ─── ToolbarButton ─────────────────────────────────────────────────────────────
 
@@ -75,22 +50,12 @@ interface ToolbarButtonProps {
 }
 
 function ToolbarButton({ label, isActive, onMouseDown, children }: ToolbarButtonProps) {
-  const [hovered, setHovered] = useState(false);
-
-  const style: CSSProperties = {
-    ...tbtnBase,
-    ...(hovered ? tbtnHover : {}),
-    ...(isActive ? tbtnActive : {}),
-  };
-
   return (
     <button
       type="button"
       aria-label={label}
       onMouseDown={onMouseDown}
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
-      style={style}
+      className={`jikjo-toolbar__btn${isActive ? " jikjo-toolbar__btn--active" : ""}`}
     >
       {children}
     </button>
@@ -114,6 +79,16 @@ export interface EditorUIProps {
    * "blockHandle" | "inlineAdd" | "slashCommand" | "bubbleMenu"
    */
   features?: Array<"blockHandle" | "inlineAdd" | "slashCommand" | "bubbleMenu">;
+  /**
+   * false → read-only viewer (toolbar and all editing UI are hidden)
+   * @default true
+   */
+  editable?: boolean;
+  /**
+   * Called once the Lexical editor instance is ready.
+   * Use this to call exportToHtml / exportToMarkdown from @jikjo/core.
+   */
+  onEditor?: (editor: LexicalEditor) => void;
 }
 
 // ─── Default extensions ───────────────────────────────────────────────────────
@@ -129,14 +104,27 @@ interface EditorInnerProps {
   extensions: Extension[];
   toolbarContent: ReactNode | false | undefined;
   features: Array<"blockHandle" | "inlineAdd" | "slashCommand" | "bubbleMenu">;
+  editable: boolean;
+  onEditor?: (editor: LexicalEditor) => void;
 }
 
 function EditorInner({
   extensions,
   toolbarContent,
   features,
+  editable,
+  onEditor,
 }: EditorInnerProps) {
   const [editor] = useLexicalComposerContext();
+
+  // editable 상태 동기화 및 onEditor 콜백 호출
+  useEffect(() => {
+    editor.setEditable(editable);
+  }, [editor, editable]);
+
+  useEffect(() => {
+    onEditor?.(editor);
+  }, [editor, onEditor]);
 
   const selection = useSelectionPlugin();
   const slashCommand = useSlashCommandPlugin();
@@ -266,17 +254,19 @@ function EditorInner({
     [editor],
   );
 
+  const activeFeatures = editable ? features : [];
+
   return (
     <>
       {/* ── Toolbar ──────────────────────────────────────────────────── */}
-      {toolbarContent === false ? null : toolbarContent !== undefined ? (
-        <div style={{ display: "flex", alignItems: "center", gap: 2, padding: "8px 16px", borderBottom: "1px solid rgba(39,39,42,0.5)" }}>
+      {!editable ? null : toolbarContent === false ? null : toolbarContent !== undefined ? (
+        <div className="jikjo-toolbar">
           {toolbarContent}
         </div>
       ) : (
-        <div style={{ display: "flex", alignItems: "center", gap: 2, padding: "8px 16px", borderBottom: "1px solid rgba(39,39,42,0.5)" }}>
+        <div className="jikjo-toolbar">
           {/* Format group */}
-          <div style={{ display: "flex", alignItems: "center", gap: 2 }}>
+          <div className="jikjo-toolbar__group">
             <ToolbarButton
               label="Bold"
               isActive={selection.format.bold}
@@ -314,10 +304,10 @@ function EditorInner({
             </ToolbarButton>
           </div>
 
-          <div style={{ width: 1, height: 16, background: "#27272a", margin: "0 4px" }} />
+          <div className="jikjo-toolbar__separator" />
 
           {/* Heading group */}
-          <div style={{ display: "flex", alignItems: "center", gap: 2 }}>
+          <div className="jikjo-toolbar__group">
             <ToolbarButton
               label="Heading 1"
               isActive={currentHeadingTag === "h1"}
@@ -344,7 +334,7 @@ function EditorInner({
       )}
 
       {/* ── Floating overlays ────────────────────────────────────────── */}
-      {features.includes("bubbleMenu") && (
+      {activeFeatures.includes("bubbleMenu") && (
         <BubbleMenu
           isVisible={selection.isActive}
           format={selection.format}
@@ -353,7 +343,7 @@ function EditorInner({
         />
       )}
 
-      {features.includes("slashCommand") && (
+      {activeFeatures.includes("slashCommand") && (
         <SlashMenu
           isVisible={slashCommand.isActive}
           query={slashCommand.query}
@@ -365,13 +355,13 @@ function EditorInner({
 
       {/* drag handle + + 버튼 + 커서 인디케이터 */}
       <BlockToolbar
-        isVisible={blockHover.isActive && (features.includes("blockHandle") || features.includes("inlineAdd"))}
+        isVisible={blockHover.isActive && (activeFeatures.includes("blockHandle") || activeFeatures.includes("inlineAdd"))}
         nodeKey={blockHover.nodeKey}
         focusedNodeKey={focusedNodeKey}
         items={slashMenuItems}
         editor={editor}
-        showDragHandle={features.includes("blockHandle")}
-        showAddButton={features.includes("inlineAdd")}
+        showDragHandle={activeFeatures.includes("blockHandle")}
+        showAddButton={activeFeatures.includes("inlineAdd")}
         onDragStarted={handleDragStarted}
         onDropped={handleDropped}
       />
@@ -387,8 +377,11 @@ export function EditorUI({
   toolbarContent,
   className,
   features = [...ALL_FEATURES],
+  editable = true,
+  onEditor,
 }: EditorUIProps) {
-  const hasBlockToolbar = features.includes("blockHandle") || features.includes("inlineAdd");
+  const activeFeatures = editable ? features : [];
+  const hasBlockToolbar = activeFeatures.includes("blockHandle") || activeFeatures.includes("inlineAdd");
   return (
     <div
       className={className}
@@ -408,6 +401,8 @@ export function EditorUI({
           extensions={extensions}
           toolbarContent={toolbarContent}
           features={features}
+          editable={editable}
+          onEditor={onEditor}
         />
       </Editor>
     </div>
