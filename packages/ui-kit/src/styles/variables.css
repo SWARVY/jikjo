@@ -1,4 +1,5 @@
 :root {
+  --jikjo-toolbar-border: rgba(39, 39, 42, 0.5);
   --jikjo-menu-bg: #27272a;
   --jikjo-menu-shadow: rgba(0, 0, 0, 0.5);
   --jikjo-menu-item-text: #a1a1aa;

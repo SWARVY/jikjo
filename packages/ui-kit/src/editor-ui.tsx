@@ -31,39 +31,13 @@ import {
   Strikethrough,
   Underline,
 } from "lucide-react";
-import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import type { MouseEvent } from "react";
 import { BubbleMenu } from "./components/bubble-menu";
 import { BlockToolbar } from "./components/block-toolbar";
 import { SlashMenu } from "./components/slash-menu";
-
-// ─── Styles ───────────────────────────────────────────────────────────────────
-
-const tbtnBase: CSSProperties = {
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  width: 32,
-  height: 32,
-  borderRadius: 6,
-  border: "none",
-  background: "transparent",
-  color: "#71717a",
-  cursor: "pointer",
-  padding: 0,
-  transition: "background 100ms, color 100ms",
-  flexShrink: 0,
-};
-
-const tbtnHover: CSSProperties = {
-  background: "rgba(39,39,42,0.9)",
-  color: "#e4e4e7",
-};
-
-const tbtnActive: CSSProperties = {
-  background: "rgba(63,63,70,0.8)",
-  color: "#f4f4f5",
-};
+import "./styles/variables.css";
+import "./styles/editor-ui.css";
 
 // ─── ToolbarButton ─────────────────────────────────────────────────────────────
 
@@ -75,22 +49,12 @@ interface ToolbarButtonProps {
 }
 
 function ToolbarButton({ label, isActive, onMouseDown, children }: ToolbarButtonProps) {
-  const [hovered, setHovered] = useState(false);
-
-  const style: CSSProperties = {
-    ...tbtnBase,
-    ...(hovered ? tbtnHover : {}),
-    ...(isActive ? tbtnActive : {}),
-  };
-
   return (
     <button
       type="button"
       aria-label={label}
       onMouseDown={onMouseDown}
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
-      style={style}
+      className={`jikjo-toolbar__btn${isActive ? " jikjo-toolbar__btn--active" : ""}`}
     >
       {children}
     </button>
@@ -270,13 +234,13 @@ function EditorInner({
     <>
       {/* ── Toolbar ──────────────────────────────────────────────────── */}
       {toolbarContent === false ? null : toolbarContent !== undefined ? (
-        <div style={{ display: "flex", alignItems: "center", gap: 2, padding: "8px 16px", borderBottom: "1px solid rgba(39,39,42,0.5)" }}>
+        <div className="jikjo-toolbar">
           {toolbarContent}
         </div>
       ) : (
-        <div style={{ display: "flex", alignItems: "center", gap: 2, padding: "8px 16px", borderBottom: "1px solid rgba(39,39,42,0.5)" }}>
+        <div className="jikjo-toolbar">
           {/* Format group */}
-          <div style={{ display: "flex", alignItems: "center", gap: 2 }}>
+          <div className="jikjo-toolbar__group">
             <ToolbarButton
               label="Bold"
               isActive={selection.format.bold}
@@ -314,10 +278,10 @@ function EditorInner({
             </ToolbarButton>
           </div>
 
-          <div style={{ width: 1, height: 16, background: "#27272a", margin: "0 4px" }} />
+          <div className="jikjo-toolbar__separator" />
 
           {/* Heading group */}
-          <div style={{ display: "flex", alignItems: "center", gap: 2 }}>
+          <div className="jikjo-toolbar__group">
             <ToolbarButton
               label="Heading 1"
               isActive={currentHeadingTag === "h1"}
