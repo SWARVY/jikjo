@@ -1,5 +1,17 @@
 # @jikjo/ui-kit
 
+## 0.5.0
+
+### Minor Changes
+
+- 3477f77: Extract top toolbar styles into CSS classes and expose them as CSS custom properties (`--jikjo-toolbar-border`, `--jikjo-btn-*`). The toolbar background, button colors, hover/active states, and border are now fully customizable without overriding component styles.
+- ed4bcb9: Add `exportToHtml` and `exportToMarkdown` utilities. No need to install `@lexical/html` or `@lexical/markdown` separately — they are now bundled as dependencies of `@jikjo/core`.
+
+### Patch Changes
+
+- Updated dependencies [ed4bcb9]
+  - @jikjo/core@0.3.0
+
 ## 0.4.0
 
 ### Minor Changes
