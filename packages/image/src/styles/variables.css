@@ -1,0 +1,56 @@
+:root {
+  /* Dialog */
+  --jikjo-dialog-bg: #18181b;
+  --jikjo-dialog-border: #3f3f46;
+  --jikjo-dialog-shadow: rgba(0, 0, 0, 0.6);
+  --jikjo-dialog-text: #e4e4e7;
+  --jikjo-dialog-overlay-bg: rgba(0, 0, 0, 0.65);
+
+  /* Drop zone */
+  --jikjo-dropzone-border: #3f3f46;
+  --jikjo-dropzone-border-hover: #52525b;
+  --jikjo-dropzone-border-active: #6366f1;
+  --jikjo-dropzone-bg-hover: rgba(39, 39, 42, 0.5);
+  --jikjo-dropzone-bg-active: rgba(99, 102, 241, 0.06);
+
+  /* Accent (upload badge, link color, spinners) */
+  --jikjo-accent: #6366f1;
+  --jikjo-accent-hover: #4f46e5;
+  --jikjo-accent-text: #a5b4fc;
+
+  /* Buttons */
+  --jikjo-btn-text: #a1a1aa;
+  --jikjo-btn-text-hover: #d4d4d8;
+  --jikjo-btn-border: #3f3f46;
+  --jikjo-btn-border-hover: #52525b;
+  --jikjo-btn-bg-hover: rgba(39, 39, 42, 0.6);
+
+  /* Image component */
+  --jikjo-image-outline: #6366f1;
+  --jikjo-image-caption-color: #71717a;
+
+  /* Align toolbar */
+  --jikjo-align-bg: #18181b;
+  --jikjo-align-border: #3f3f46;
+  --jikjo-align-shadow: rgba(0, 0, 0, 0.4);
+  --jikjo-align-btn-text: #a1a1aa;
+  --jikjo-align-btn-text-active: #a5b4fc;
+  --jikjo-align-btn-bg-active: rgba(99, 102, 241, 0.3);
+
+  /* Resize handle */
+  --jikjo-resize-handle-bg: rgba(255, 255, 255, 0.85);
+  --jikjo-resize-handle-border: rgba(0, 0, 0, 0.15);
+  --jikjo-resize-handle-shadow: rgba(0, 0, 0, 0.2);
+
+  /* Preview box */
+  --jikjo-preview-bg: #09090b;
+  --jikjo-preview-border: #3f3f46;
+  --jikjo-preview-overlay-bg: rgba(9, 9, 11, 0.7);
+
+  /* Error */
+  --jikjo-error-color: #f87171;
+
+  /* File icon */
+  --jikjo-file-icon-color: #52525b;
+  --jikjo-file-icon-color-active: #818cf8;
+}

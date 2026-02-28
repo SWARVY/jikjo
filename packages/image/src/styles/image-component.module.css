@@ -1,0 +1,117 @@
+/* ── Wrapper ──────────────────────────────────────────────────────────────── */
+
+.wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  margin: 8px 0;
+  user-select: none;
+}
+
+.wrapperLeft   { align-items: flex-start; }
+.wrapperCenter { align-items: center; }
+.wrapperRight  { align-items: flex-end; }
+
+/* ── Figure ───────────────────────────────────────────────────────────────── */
+
+.figure {
+  position: relative;
+  display: inline-block;
+  max-width: 100%;
+  outline: 2px solid transparent;
+  outline-offset: 2px;
+  border-radius: 4px;
+  cursor: default;
+  transition: outline-color 120ms;
+}
+
+.figureSelected {
+  outline-color: var(--jikjo-image-outline);
+}
+
+/* ── Image ────────────────────────────────────────────────────────────────── */
+
+.img {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  height: auto;
+  border-radius: 4px;
+}
+
+.imgResizing {
+  pointer-events: none;
+}
+
+/* ── Caption ──────────────────────────────────────────────────────────────── */
+
+.caption {
+  display: block;
+  margin-top: 6px;
+  font-size: 13px;
+  color: var(--jikjo-image-caption-color);
+  text-align: center;
+  max-width: 100%;
+  background: transparent;
+  border: none;
+  outline: none;
+  font-family: inherit;
+  line-height: 1.4;
+  padding: 0;
+}
+
+/* ── Resize handle ────────────────────────────────────────────────────────── */
+
+.resizeHandle {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 12px;
+  height: 40px;
+  background: var(--jikjo-resize-handle-bg);
+  border-radius: 4px;
+  cursor: ew-resize;
+  border: 1px solid var(--jikjo-resize-handle-border);
+  box-shadow: 0 1px 4px var(--jikjo-resize-handle-shadow);
+}
+
+.resizeHandleLeft  { left: -6px; }
+.resizeHandleRight { right: -6px; }
+
+/* ── Align toolbar ────────────────────────────────────────────────────────── */
+
+.alignToolbar {
+  position: absolute;
+  top: -36px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 2px;
+  background: var(--jikjo-align-bg);
+  border: 1px solid var(--jikjo-align-border);
+  border-radius: 6px;
+  padding: 2px 4px;
+  box-shadow: 0 4px 12px var(--jikjo-align-shadow);
+  z-index: 10;
+}
+
+.alignBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 4px;
+  border: none;
+  cursor: pointer;
+  font-size: 14px;
+  background: transparent;
+  color: var(--jikjo-align-btn-text);
+  transition: background 100ms, color 100ms;
+}
+
+.alignBtnActive {
+  background: var(--jikjo-align-btn-bg-active);
+  color: var(--jikjo-align-btn-text-active);
+}
