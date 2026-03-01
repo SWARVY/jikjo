@@ -7,7 +7,8 @@ import {
 import type { Extension } from "@jikjo/core";
 import { createImageExtension } from "@jikjo/image";
 import { OnChangePlugin } from "@lexical/react/LexicalOnChangePlugin";
-import type { EditorState } from "lexical";
+import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext";
+import type { EditorState, SerializedEditorState } from "lexical";
 import {
   Github,
   Blocks,
@@ -15,8 +16,9 @@ import {
   Code2,
   ChevronRight,
   Sparkles,
+  Eye,
 } from "lucide-react";
-import { createElement, useState, useCallback, useMemo } from "react";
+import { createElement, useState, useCallback, useMemo, useRef, useEffect } from "react";
 
 export const Route = createFileRoute("/")({
   component: IndexPage,
@@ -118,10 +120,75 @@ const defaultExtensions: Extension[] = [richTextExtension, historyExtension];
 const notionExtensions: Extension[] = [...defaultExtensions, imageExtension];
 
 // Notion-like: full features — slash commands, inline + button, bubble menu, drag handle
-function NotionLikePreview() {
+function NotionLikePreview({ onStateChange }: { onStateChange: (state: SerializedEditorState) => void }) {
+  const handleChange = useCallback(
+    (editorState: EditorState) => {
+      onStateChange(editorState.toJSON());
+    },
+    [onStateChange],
+  );
+
+  const onChangeExtension = useMemo<Extension>(
+    () => ({
+      name: "notion-on-change",
+      nodes: [],
+      plugins: [createElement(OnChangePlugin, { onChange: handleChange })],
+    }),
+    [handleChange],
+  );
+
   return (
     <div className="rounded-xl border border-zinc-800 bg-zinc-900/60 shadow-2xl shadow-black/40">
-      <EditorUI className="flex flex-col rounded-xl min-h-[480px]" extensions={notionExtensions} />
+      <EditorUI
+        className="flex flex-col rounded-xl min-h-[480px]"
+        extensions={[...notionExtensions, onChangeExtension]}
+      />
+    </div>
+  );
+}
+
+// Plugin that restores serialized editor state once on mount
+function RestoreStatePlugin({ state }: { state: SerializedEditorState }) {
+  const [editor] = useLexicalComposerContext();
+  const restored = useRef(false);
+  useEffect(() => {
+    if (restored.current) return;
+    restored.current = true;
+    queueMicrotask(() => {
+      const parsed = editor.parseEditorState(state);
+      editor.setEditorState(parsed);
+    });
+  }, [editor, state]);
+  return null;
+}
+
+// Read-only: renders the last saved Notion-like editor state as a viewer
+function ReadOnlyPreview({ initialState }: { initialState: SerializedEditorState | null }) {
+  const restoreExtension = useMemo<Extension | null>(() => {
+    if (!initialState) return null;
+    return {
+      name: "restore-state",
+      nodes: [],
+      plugins: [createElement(RestoreStatePlugin, { state: initialState })],
+    };
+  }, [initialState]);
+
+  return (
+    <div className="rounded-xl border border-zinc-800 bg-zinc-900/60 shadow-2xl shadow-black/40">
+      {initialState && restoreExtension ? (
+        <EditorUI
+          key={JSON.stringify(initialState)}
+          className="flex flex-col rounded-xl min-h-[480px]"
+          extensions={[...notionExtensions, restoreExtension]}
+          editable={false}
+          toolbarContent={false}
+        />
+      ) : (
+        <div className="flex flex-col items-center justify-center min-h-[480px] gap-3 text-zinc-600">
+          <Eye size={28} strokeWidth={1.5} />
+          <p className="text-sm">Switch to <span className="text-zinc-400 font-medium">Notion-like editor</span> and type something first.</p>
+        </div>
+      )}
     </div>
   );
 }
@@ -198,7 +265,7 @@ function HeadlessPreview() {
 
 // ─── Editor Switcher ──────────────────────────────────────────────────────────
 
-type EditorTab = "notion-like" | "simple" | "headless";
+type EditorTab = "notion-like" | "simple" | "headless" | "read-only";
 
 interface TabConfig {
   id: EditorTab;
@@ -231,11 +298,32 @@ const TABS: TabConfig[] = [
       "Zero UI. Type on the left and watch the live editor state update in real time on the right.",
     badge: "Core only",
   },
+  {
+    id: "read-only",
+    label: "Read-only viewer",
+    icon: <Eye size={14} />,
+    description:
+      "The same content rendered with editable={false}. All editing UI is hidden — toolbar, handles, bubble menu.",
+    badge: "editable={false}",
+  },
 ];
 
 function EditorSwitcher() {
   const [active, setActive] = useState<EditorTab>("notion-like");
   const current = TABS.find((t) => t.id === active)!;
+  const notionStateRef = useRef<SerializedEditorState | null>(null);
+  const [readOnlySnapshot, setReadOnlySnapshot] = useState<SerializedEditorState | null>(null);
+
+  const handleNotionStateChange = useCallback((state: SerializedEditorState) => {
+    notionStateRef.current = state;
+  }, []);
+
+  const handleTabChange = useCallback((tab: EditorTab) => {
+    if (tab === "read-only") {
+      setReadOnlySnapshot(notionStateRef.current);
+    }
+    setActive(tab);
+  }, []);
 
   return (
     <section id="demo" className="px-6 pb-24">
@@ -245,7 +333,7 @@ function EditorSwitcher() {
             <button
               key={tab.id}
               type="button"
-              onClick={() => setActive(tab.id)}
+              onClick={() => handleTabChange(tab.id)}
               className={[
                 "flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-150",
                 active === tab.id
@@ -268,11 +356,13 @@ function EditorSwitcher() {
           {current.description}
         </p>
 
-        <div key={active}>
-          {active === "notion-like" && <NotionLikePreview />}
-          {active === "simple" && <SimplePreview />}
-          {active === "headless" && <HeadlessPreview />}
+        {/* NotionLike는 unmount되지 않도록 hidden 처리 — state 보존 */}
+        <div className={active === "notion-like" ? "" : "hidden"}>
+          <NotionLikePreview onStateChange={handleNotionStateChange} />
         </div>
+        {active === "simple" && <SimplePreview />}
+        {active === "headless" && <HeadlessPreview />}
+        {active === "read-only" && <ReadOnlyPreview initialState={readOnlySnapshot} />}
 
         {active === "notion-like" && (
           <div className="mt-5 flex items-center justify-center gap-5 text-xs text-zinc-700">
@@ -292,6 +382,11 @@ function EditorSwitcher() {
                 +
               </kbd>
             </span>
+          </div>
+        )}
+        {active === "read-only" && readOnlySnapshot && (
+          <div className="mt-5 flex items-center justify-center text-xs text-zinc-700">
+            <span>Switch back to <span className="text-zinc-500">Notion-like editor</span> to edit, then return here to refresh the view.</span>
           </div>
         )}
       </div>
