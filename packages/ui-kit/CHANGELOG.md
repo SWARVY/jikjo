@@ -1,5 +1,11 @@
 # @jikjo/ui-kit
 
+## 0.5.2
+
+### Patch Changes
+
+- 7e3872c: When `editable={false}`, the cursor indicator (blue vertical line) was
+
 ## 0.5.1
 
 ### Patch Changes

@@ -1,5 +1,12 @@
 # @jikjo/playground
 
+## 0.1.7
+
+### Patch Changes
+
+- Updated dependencies [7e3872c]
+  - @jikjo/ui-kit@0.5.2
+
 ## 0.1.6
 
 ### Patch Changes
