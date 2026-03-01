@@ -1,5 +1,12 @@
 # @jikjo/playground
 
+## 0.1.6
+
+### Patch Changes
+
+- Updated dependencies [cb7e522]
+  - @jikjo/image@0.4.0
+
 ## 0.1.5
 
 ### Patch Changes
