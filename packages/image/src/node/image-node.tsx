@@ -152,6 +152,7 @@ export class ImageNode extends DecoratorNode<JSX.Element> {
       width: this.__width,
       alignment: this.__alignment,
       editor,
+      editable: editor.isEditable(),
     })
   }
 }

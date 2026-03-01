@@ -16,6 +16,7 @@ import {
 } from 'lexical'
 import { $createParagraphNode } from 'lexical'
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { $createImageNode, $isImageNode, ImageNode } from '../node/image-node'
 import type { ImageExtensionOptions, ImagePayload } from '../types'
 import '../styles/variables.css'
@@ -170,7 +171,7 @@ function InsertImageDialog({
     uploading ? styles.dropzoneUploading : '',
   ].filter(Boolean).join(' ')
 
-  return (
+  return createPortal(
     <div
       className={`${styles.overlay}${isClosing ? ` ${styles.overlayClosing}` : ''}`}
       onMouseDown={(e) => { if (e.target === e.currentTarget) onClose() }}
@@ -260,7 +261,8 @@ function InsertImageDialog({
         </div>
 
       </div>
-    </div>
+    </div>,
+    document.body,
   )
 }
 
@@ -310,6 +312,7 @@ export function ImagePlugin({ options, onRegisterOpen }: ImagePluginProps) {
     return editor.registerCommand<ImagePayload>(
       INSERT_IMAGE_COMMAND,
       (payload) => {
+        if (!editor.isEditable()) return false
         const imageNode = $createImageNode(payload)
         const selection = $getSelection()
 
@@ -350,6 +353,7 @@ export function ImagePlugin({ options, onRegisterOpen }: ImagePluginProps) {
     return editor.registerCommand<DragEvent>(
       DROP_COMMAND,
       (event) => {
+        if (!editor.isEditable()) return false
         const internalData = getDragImageData(event)
         if (internalData) return false
 
@@ -384,6 +388,7 @@ export function ImagePlugin({ options, onRegisterOpen }: ImagePluginProps) {
     if (!root) return
 
     async function onPaste(e: ClipboardEvent) {
+      if (!editor.isEditable()) return
       const items = e.clipboardData?.items
       if (!items) return
 

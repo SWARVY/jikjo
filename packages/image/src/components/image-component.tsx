@@ -32,6 +32,7 @@ export interface ImageComponentProps {
   width: number | undefined
   alignment: ImageAlignment
   editor: ReturnType<typeof useLexicalComposerContext>[0]
+  editable: boolean
 }
 
 // ─── Resize handle ────────────────────────────────────────────────────────────
@@ -103,6 +104,7 @@ export function ImageComponent({
   width,
   alignment,
   editor,
+  editable,
 }: ImageComponentProps) {
   const [isSelected, setSelected, clearSelection] = useLexicalNodeSelection(nodeKey)
   const [currentWidth, setCurrentWidth] = useState<number | undefined>(width)
@@ -131,6 +133,7 @@ export function ImageComponent({
   )
 
   useEffect(() => {
+    if (!editable) return
     return editor.registerCommand(
       CLICK_COMMAND,
       (e: MouseEvent) => {
@@ -143,9 +146,10 @@ export function ImageComponent({
       },
       COMMAND_PRIORITY_LOW,
     )
-  }, [editor, setSelected, clearSelection])
+  }, [editor, editable, setSelected, clearSelection])
 
   useEffect(() => {
+    if (!editable) return
     const unregDel = editor.registerCommand(
       KEY_DELETE_COMMAND,
       onDelete as unknown as () => boolean,
@@ -157,7 +161,7 @@ export function ImageComponent({
       COMMAND_PRIORITY_LOW,
     )
     return () => { unregDel(); unregBack() }
-  }, [editor, onDelete])
+  }, [editor, editable, onDelete])
 
   // ── 리사이즈 ──────────────────────────────────────────────────────────────
 
@@ -233,7 +237,7 @@ export function ImageComponent({
         ref={containerRef}
         className={`${styles.figure}${isSelected ? ` ${styles.figureSelected}` : ''}`}
       >
-        {isSelected && (
+        {editable && isSelected && (
           <AlignToolbar current={alignment} onChange={onAlignChange} />
         )}
 
@@ -246,7 +250,7 @@ export function ImageComponent({
           draggable={false}
         />
 
-        {isSelected && (
+        {editable && isSelected && (
           <>
             <ResizeHandle position="left" onMouseDown={startResize} />
             <ResizeHandle position="right" onMouseDown={startResize} />
@@ -254,15 +258,26 @@ export function ImageComponent({
         )}
       </figure>
 
-      <input
-        type="text"
-        value={captionText}
-        onChange={(e) => setCaptionText(e.target.value)}
-        onBlur={onCaptionBlur}
-        placeholder="Caption (optional)"
-        className={styles.caption}
-        style={currentWidth ? { width: `${currentWidth}px` } : undefined}
-      />
+      {editable ? (
+        <input
+          type="text"
+          value={captionText}
+          onChange={(e) => setCaptionText(e.target.value)}
+          onBlur={onCaptionBlur}
+          placeholder="Caption (optional)"
+          className={styles.caption}
+          style={currentWidth ? { width: `${currentWidth}px` } : undefined}
+        />
+      ) : (
+        captionText && (
+          <span
+            className={styles.caption}
+            style={currentWidth ? { width: `${currentWidth}px` } : undefined}
+          >
+            {captionText}
+          </span>
+        )
+      )}
     </div>
   )
 }
