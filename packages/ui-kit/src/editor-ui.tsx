@@ -357,7 +357,7 @@ function EditorInner({
       <BlockToolbar
         isVisible={blockHover.isActive && (activeFeatures.includes("blockHandle") || activeFeatures.includes("inlineAdd"))}
         nodeKey={blockHover.nodeKey}
-        focusedNodeKey={focusedNodeKey}
+        focusedNodeKey={editable ? focusedNodeKey : null}
         items={slashMenuItems}
         editor={editor}
         showDragHandle={activeFeatures.includes("blockHandle")}
