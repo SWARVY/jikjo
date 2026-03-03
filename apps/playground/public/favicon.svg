@@ -1,0 +1,32 @@
+<svg width="240" height="240" viewBox="0 0 240 240" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <radialGradient id="bg" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(120 116) rotate(90) scale(128)">
+      <stop offset="0" stop-color="#211E45" />
+      <stop offset="1" stop-color="#090A16" />
+    </radialGradient>
+    <linearGradient id="ribbon_a" x1="56" y1="60" x2="184" y2="180" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#A78BFA" />
+      <stop offset="0.5" stop-color="#8B5CF6" />
+      <stop offset="1" stop-color="#6366F1" />
+    </linearGradient>
+    <linearGradient id="ribbon_b" x1="184" y1="60" x2="56" y2="180" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#F472B6" />
+      <stop offset="0.5" stop-color="#E879F9" />
+      <stop offset="1" stop-color="#A78BFA" />
+    </linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="9" stdDeviation="9" flood-color="#02030E" flood-opacity="0.55" />
+    </filter>
+  </defs>
+
+  <rect width="240" height="240" rx="52" fill="url(#bg)" />
+  <rect x="18" y="18" width="204" height="204" rx="36" stroke="#A78BFA" stroke-opacity="0.2" />
+
+  <g filter="url(#shadow)">
+    <!-- ribbon A -->
+    <path d="M56 80C56 66.745 66.745 56 80 56H102L184 138V160C184 173.255 173.255 184 160 184H138L56 102V80Z" fill="url(#ribbon_a)" />
+
+    <!-- ribbon B -->
+    <path d="M184 80C184 66.745 173.255 56 160 56H138L56 138V160C56 173.255 66.745 184 80 184H102L184 102V80Z" fill="url(#ribbon_b)" />
+  </g>
+</svg>

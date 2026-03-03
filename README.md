@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="./apps/playground/public/favicon.svg" alt="jikjo logo" width="88" height="88" />
+</p>
+
 # jikjo
 
 A headless, framework-agnostic rich text editor built on [Lexical](https://lexical.dev/). Provides a plugin-based extension system, a ready-to-use UI kit, and optional add-ons like image handling — all as independently publishable npm packages.
