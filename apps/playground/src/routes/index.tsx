@@ -1,9 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { EditorUI } from "@jikjo/ui-kit";
-import {
-  historyExtension,
-  richTextExtension,
-} from "@jikjo/core";
+import { historyExtension, richTextExtension } from "@jikjo/core";
 import type { Extension } from "@jikjo/core";
 import { createImageExtension } from "@jikjo/image";
 import { OnChangePlugin } from "@lexical/react/LexicalOnChangePlugin";
@@ -18,7 +15,14 @@ import {
   Sparkles,
   Eye,
 } from "lucide-react";
-import { createElement, useState, useCallback, useMemo, useRef, useEffect } from "react";
+import {
+  createElement,
+  useState,
+  useCallback,
+  useMemo,
+  useRef,
+  useEffect,
+} from "react";
 
 export const Route = createFileRoute("/")({
   component: IndexPage,
@@ -31,6 +35,11 @@ function Header() {
     <header className="fixed top-0 inset-x-0 z-40 border-b border-white/5 bg-zinc-950/80 backdrop-blur-md">
       <div className="mx-auto max-w-6xl px-6 h-14 flex items-center justify-between">
         <div className="flex items-center gap-2.5">
+          <img
+            src="/favicon.svg"
+            alt="jikjo logo"
+            className="w-6 h-6 rounded-md shadow-sm shadow-black/30"
+          />
           <span className="text-[15px] font-semibold tracking-tight text-white">
             jikjo
           </span>
@@ -41,7 +50,7 @@ function Header() {
 
         <nav className="flex items-center gap-2">
           <a
-            href="https://github.com"
+            href="https://github.com/SWARVY/jikjo"
             target="_blank"
             rel="noopener noreferrer"
             className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-zinc-400 hover:text-zinc-100 hover:bg-white/5 rounded-md transition-colors"
@@ -99,7 +108,7 @@ function HeroSection() {
             Get started
           </a>
           <a
-            href="https://github.com"
+            href="https://github.com/SWARVY/jikjo"
             target="_blank"
             rel="noopener noreferrer"
             className="flex items-center gap-1.5 px-5 py-2.5 border border-zinc-700 text-zinc-300 text-sm font-medium rounded-lg hover:border-zinc-600 hover:text-white transition-colors"
@@ -120,7 +129,11 @@ const defaultExtensions: Extension[] = [richTextExtension, historyExtension];
 const notionExtensions: Extension[] = [...defaultExtensions, imageExtension];
 
 // Notion-like: full features — slash commands, inline + button, bubble menu, drag handle
-function NotionLikePreview({ onStateChange }: { onStateChange: (state: SerializedEditorState) => void }) {
+function NotionLikePreview({
+  onStateChange,
+}: {
+  onStateChange: (state: SerializedEditorState) => void;
+}) {
   const handleChange = useCallback(
     (editorState: EditorState) => {
       onStateChange(editorState.toJSON());
@@ -138,12 +151,10 @@ function NotionLikePreview({ onStateChange }: { onStateChange: (state: Serialize
   );
 
   return (
-    <div className="rounded-xl border border-zinc-800 bg-zinc-900/60 shadow-2xl shadow-black/40">
-      <EditorUI
-        className="flex flex-col rounded-xl min-h-[480px]"
-        extensions={[...notionExtensions, onChangeExtension]}
-      />
-    </div>
+    <EditorUI
+      className="flex flex-col min-h-[480px]"
+      extensions={[...notionExtensions, onChangeExtension]}
+    />
   );
 }
 
@@ -163,7 +174,11 @@ function RestoreStatePlugin({ state }: { state: SerializedEditorState }) {
 }
 
 // Read-only: renders the last saved Notion-like editor state as a viewer
-function ReadOnlyPreview({ initialState }: { initialState: SerializedEditorState | null }) {
+function ReadOnlyPreview({
+  initialState,
+}: {
+  initialState: SerializedEditorState | null;
+}) {
   const restoreExtension = useMemo<Extension | null>(() => {
     if (!initialState) return null;
     return {
@@ -173,22 +188,22 @@ function ReadOnlyPreview({ initialState }: { initialState: SerializedEditorState
     };
   }, [initialState]);
 
-  return (
-    <div className="rounded-xl border border-zinc-800 bg-zinc-900/60 shadow-2xl shadow-black/40">
-      {initialState && restoreExtension ? (
-        <EditorUI
-          key={JSON.stringify(initialState)}
-          className="flex flex-col rounded-xl min-h-[480px]"
-          extensions={[...notionExtensions, restoreExtension]}
-          editable={false}
-          toolbarContent={false}
-        />
-      ) : (
-        <div className="flex flex-col items-center justify-center min-h-[480px] gap-3 text-zinc-600">
-          <Eye size={28} strokeWidth={1.5} />
-          <p className="text-sm">Switch to <span className="text-zinc-400 font-medium">Notion-like editor</span> and type something first.</p>
-        </div>
-      )}
+  return initialState && restoreExtension ? (
+    <EditorUI
+      key={JSON.stringify(initialState)}
+      className="flex flex-col min-h-[480px]"
+      extensions={[...notionExtensions, restoreExtension]}
+      editable={false}
+      toolbarContent={false}
+    />
+  ) : (
+    <div className="flex flex-col items-center justify-center min-h-[480px] gap-3 text-zinc-600">
+      <Eye size={28} strokeWidth={1.5} />
+      <p className="text-sm">
+        Type in{" "}
+        <span className="text-zinc-400 font-medium">Notion-like editor</span> to
+        preview read-only content.
+      </p>
     </div>
   );
 }
@@ -206,7 +221,11 @@ function SimplePreview() {
 }
 
 // Headless inner: mounts OnChangePlugin inside LexicalComposer via EditorUI extensions
-function HeadlessInner({ onStateChange }: { onStateChange: (json: string) => void }) {
+function HeadlessInner({
+  onStateChange,
+}: {
+  onStateChange: (json: string) => void;
+}) {
   const handleChange = useCallback(
     (state: EditorState) => {
       onStateChange(JSON.stringify(state.toJSON(), null, 2));
@@ -236,7 +255,11 @@ function HeadlessInner({ onStateChange }: { onStateChange: (json: string) => voi
 // Headless: raw editor + live JSON state side-by-side
 function HeadlessPreview() {
   const [json, setJson] = useState<string>(() =>
-    JSON.stringify({ root: { children: [{ type: "paragraph", children: [] }] } }, null, 2),
+    JSON.stringify(
+      { root: { children: [{ type: "paragraph", children: [] }] } },
+      null,
+      2,
+    ),
   );
 
   return (
@@ -252,7 +275,9 @@ function HeadlessPreview() {
         <div className="flex flex-col">
           <div className="px-4 py-2.5 border-b border-zinc-800 flex items-center gap-2">
             <span className="w-1.5 h-1.5 rounded-full bg-violet-500/60" />
-            <span className="text-[11px] text-zinc-600 font-mono">editor state (JSON)</span>
+            <span className="text-[11px] text-zinc-600 font-mono">
+              editor state (JSON)
+            </span>
           </div>
           <pre className="flex-1 p-4 text-[11px] text-zinc-500 font-mono leading-relaxed overflow-auto">
             {json}
@@ -265,7 +290,7 @@ function HeadlessPreview() {
 
 // ─── Editor Switcher ──────────────────────────────────────────────────────────
 
-type EditorTab = "notion-like" | "simple" | "headless" | "read-only";
+type EditorTab = "notion-like" | "simple" | "headless";
 
 interface TabConfig {
   id: EditorTab;
@@ -281,7 +306,7 @@ const TABS: TabConfig[] = [
     label: "Notion-like editor",
     icon: <Blocks size={14} />,
     description:
-      "Block-based editing with slash commands, drag handles, and an inline add button — just like Notion.",
+      "Editable view and read-only viewer are shown together so you can compare behavior in one screen.",
   },
   {
     id: "simple",
@@ -298,32 +323,21 @@ const TABS: TabConfig[] = [
       "Zero UI. Type on the left and watch the live editor state update in real time on the right.",
     badge: "Core only",
   },
-  {
-    id: "read-only",
-    label: "Read-only viewer",
-    icon: <Eye size={14} />,
-    description:
-      "The same content rendered with editable={false}. All editing UI is hidden — toolbar, handles, bubble menu.",
-    badge: "editable={false}",
-  },
 ];
 
 function EditorSwitcher() {
   const [active, setActive] = useState<EditorTab>("notion-like");
   const current = TABS.find((t) => t.id === active)!;
-  const notionStateRef = useRef<SerializedEditorState | null>(null);
-  const [readOnlySnapshot, setReadOnlySnapshot] = useState<SerializedEditorState | null>(null);
+  const [notionState, setNotionState] = useState<SerializedEditorState | null>(
+    null,
+  );
 
-  const handleNotionStateChange = useCallback((state: SerializedEditorState) => {
-    notionStateRef.current = state;
-  }, []);
-
-  const handleTabChange = useCallback((tab: EditorTab) => {
-    if (tab === "read-only") {
-      setReadOnlySnapshot(notionStateRef.current);
-    }
-    setActive(tab);
-  }, []);
+  const handleNotionStateChange = useCallback(
+    (state: SerializedEditorState) => {
+      setNotionState(state);
+    },
+    [],
+  );
 
   return (
     <section id="demo" className="px-6 pb-24">
@@ -333,7 +347,7 @@ function EditorSwitcher() {
             <button
               key={tab.id}
               type="button"
-              onClick={() => handleTabChange(tab.id)}
+              onClick={() => setActive(tab.id)}
               className={[
                 "flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-150",
                 active === tab.id
@@ -356,13 +370,33 @@ function EditorSwitcher() {
           {current.description}
         </p>
 
-        {/* NotionLike는 unmount되지 않도록 hidden 처리 — state 보존 */}
+        {/* Notion-like + read-only split view */}
         <div className={active === "notion-like" ? "" : "hidden"}>
-          <NotionLikePreview onStateChange={handleNotionStateChange} />
+          <div className="rounded-xl overflow-hidden border border-zinc-800 bg-zinc-900/60 shadow-2xl shadow-black/40">
+            <div className="grid grid-cols-1 lg:grid-cols-2 divide-y lg:divide-y-0 lg:divide-x divide-zinc-800">
+              <div className="flex flex-col">
+                <div className="px-4 py-2.5 border-b border-zinc-800 flex items-center gap-2">
+                  <span className="w-1.5 h-1.5 rounded-full bg-violet-500/60" />
+                  <span className="text-[11px] text-zinc-600 font-mono">
+                    notion-like editor
+                  </span>
+                </div>
+                <NotionLikePreview onStateChange={handleNotionStateChange} />
+              </div>
+              <div className="flex flex-col">
+                <div className="px-4 py-2.5 border-b border-zinc-800 flex items-center gap-2">
+                  <span className="w-1.5 h-1.5 rounded-full bg-zinc-600" />
+                  <span className="text-[11px] text-zinc-600 font-mono">
+                    read-only viewer (editable=&#123;false&#125;)
+                  </span>
+                </div>
+                <ReadOnlyPreview initialState={notionState} />
+              </div>
+            </div>
+          </div>
         </div>
         {active === "simple" && <SimplePreview />}
         {active === "headless" && <HeadlessPreview />}
-        {active === "read-only" && <ReadOnlyPreview initialState={readOnlySnapshot} />}
 
         {active === "notion-like" && (
           <div className="mt-5 flex items-center justify-center gap-5 text-xs text-zinc-700">
@@ -382,11 +416,6 @@ function EditorSwitcher() {
                 +
               </kbd>
             </span>
-          </div>
-        )}
-        {active === "read-only" && readOnlySnapshot && (
-          <div className="mt-5 flex items-center justify-center text-xs text-zinc-700">
-            <span>Switch back to <span className="text-zinc-500">Notion-like editor</span> to edit, then return here to refresh the view.</span>
           </div>
         )}
       </div>
@@ -471,21 +500,41 @@ function Footer() {
     <footer className="border-t border-zinc-800/50 px-6 py-8">
       <div className="mx-auto max-w-4xl flex items-center justify-between">
         <div className="flex items-center gap-2">
+          <img
+            src="/favicon.svg"
+            alt="jikjo logo"
+            className="w-[18px] h-[18px] rounded"
+          />
           <span className="text-sm font-semibold text-zinc-500">jikjo</span>
           <span className="text-zinc-800">·</span>
           <span className="text-xs text-zinc-700">alpha</span>
         </div>
         <p className="text-xs text-zinc-700">
           Powered by{" "}
-          <a href="https://lexical.dev" target="_blank" rel="noopener noreferrer" className="text-zinc-600 hover:text-zinc-400 transition-colors">
+          <a
+            href="https://lexical.dev"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-zinc-600 hover:text-zinc-400 transition-colors"
+          >
             Lexical
           </a>
           {" · "}
-          <a href="https://motion.dev" target="_blank" rel="noopener noreferrer" className="text-zinc-600 hover:text-zinc-400 transition-colors">
+          <a
+            href="https://motion.dev"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-zinc-600 hover:text-zinc-400 transition-colors"
+          >
             Motion
           </a>
           {" · "}
-          <a href="https://tailwindcss.com" target="_blank" rel="noopener noreferrer" className="text-zinc-600 hover:text-zinc-400 transition-colors">
+          <a
+            href="https://tailwindcss.com"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-zinc-600 hover:text-zinc-400 transition-colors"
+          >
             Tailwind CSS
           </a>
         </p>
